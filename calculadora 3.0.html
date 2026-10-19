@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora: Triângulo, Espuma e Básica</title>
+<style>
+:root{--bg:#f3f6fb;--card:#fff;--ink:#1d2b3a;--mut:#667789;--line:#d5dde7;--acc:#2f6fed;--res:#e6efff}
+@media (prefers-color-scheme:dark){:root{--bg:#10161d;--card:#1a232d;--ink:#e6ecf2;--mut:#93a2b3;--line:#2f3d4c;--acc:#5b93ff;--res:#1e2f4a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Segoe UI",Roboto,Arial,sans-serif}
+main{max-width:720px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.6rem;margin:0 0 4px}
+p.sub{margin:0 0 18px;color:var(--mut)}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;padding:10px 6px;border:1px solid var(--line);background:var(--card);color:var(--mut);font:inherit;font-weight:600;cursor:pointer;border-radius:999px}
+.tabs button[aria-selected=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+.panel{background:var(--card);padding:20px;border:1px solid var(--line);border-radius:12px}
+.panel[hidden]{display:none}
+label{display:block;font-size:.88rem;font-weight:600;color:var(--mut);margin:12px 0 4px}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>div{flex:1;min-width:120px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:0 14px}
+input,select{width:100%;padding:10px;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px}
+.f{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+.f input{border:0;border-radius:0;background:transparent;min-width:0}
+.f input:focus{outline:0}
+.f span{padding:10px 12px;color:var(--mut);background:var(--bg);border-left:1px solid var(--line);white-space:nowrap}
+.f:focus-within,input:focus,select:focus,button:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
+.f.calc{background:var(--res);border-color:var(--acc)}
+.tri{fill:var(--res);stroke:var(--acc);stroke-width:2.5}
+.ang{fill:none;stroke:var(--acc);stroke-width:1.5}
+.lbl{fill:var(--ink);font-size:17px;font-style:italic}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;align-items:center}
+.btn{padding:10px 16px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:600;border-radius:8px;cursor:pointer}
+.btn.sec{background:transparent;color:var(--acc);border:1px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:default}
+.lnk{background:none;border:0;color:var(--acc);font:inherit;text-decoration:underline;cursor:pointer;padding:8px}
+.res{margin-top:16px;padding:14px;background:var(--bg);border-left:6px solid var(--acc);border-radius:6px;min-height:56px}
+.res b{font-size:1.3rem}
+.err{color:#d03a2a}
+h2{font-size:1.1rem;margin:28px 0 8px}
+h3{font-size:1rem;margin:14px 0 4px}
+table{width:100%;border-collapse:collapse;font-size:.88rem;background:var(--card)}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+.wrap{overflow-x:auto}
+.empty{color:var(--mut)}
+#disp{font-size:1.5rem;text-align:right;margin-bottom:6px}
+#cres{text-align:right;font-size:1.1rem;min-height:1.6em;color:var(--mut)}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.keys button{padding:14px 0;font:inherit;font-size:1.15rem;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;cursor:pointer}
+.keys button.op{background:var(--res);color:var(--acc);border-color:var(--res);font-weight:600}
+.keys button.eq{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
+</style>
+</head>
+<body>
+<main>
+<h1>Calculadora de Triângulo, Espuma e Básica</h1>
+<p class="sub">Calcule, guarde os resultados na lista e baixe tudo em um arquivo.</p>
+
+<div class="tabs" role="tablist">
+  <button role="tab" id="t1" aria-selected="true">Triângulo</button>
+  <button role="tab" id="t2" aria-selected="false">Espuma</button>
+  <button role="tab" id="t4" aria-selected="false">Colchão</button>
+  <button role="tab" id="t3" aria-selected="false">Calculadora</button>
+</div>
+
+<!-- TRIÂNGULO -->
+<section class="panel" id="p1" role="tabpanel">
+  <label for="modo">Dado...</label>
+  <select id="modo">
+    <option value="1">Dois lados</option>
+    <option value="2">Ângulo e hipotenusa</option>
+    <option value="3">Ângulo e um lado</option>
+    <option value="4">Área e um lado</option>
+  </select>
+  <svg viewBox="0 0 260 180" style="width:100%;max-width:300px;display:block;margin:14px auto" role="img" aria-label="Triângulo retângulo com lados a, b, c e ângulos alfa e beta">
+    <polygon class="tri" points="40,150 220,150 40,30"/>
+    <path class="ang" d="M40 134h16v16"/>
+    <text class="lbl" x="20" y="95">a</text><text class="lbl" x="125" y="172">b</text>
+    <text class="lbl" x="150" y="82">c</text><text class="lbl" x="184" y="144">α</text><text class="lbl" x="52" y="62">β</text>
+  </svg>
+  <div class="row"><div><label for="ul">Unidade de comprimento</label>
+    <select id="ul"><option>cm</option><option>mm</option><option>m</option><option>pol</option></select></div></div>
+  <div class="grid" id="campos"></div>
+  <p class="empty" style="font-size:.85rem;margin:8px 0 0">Campos em azul são calculados. Digite só os valores do modo escolhido.</p>
+  <div class="res" id="resT" aria-live="polite"></div>
+  <div class="btns">
+    <button class="btn" id="addT" disabled>Adicionar à lista</button>
+    <button class="btn sec" id="shareT">Compartilhar resultado</button>
+    <button class="lnk" id="limpaT">Limpar alterações</button>
+  </div>
+</section>
+
+<!-- ESPUMA -->
+<section class="panel" id="p2" role="tabpanel" hidden>
+  <div class="row">
+    <div><label for="comp">Comprimento (cm)</label><input id="comp" inputmode="decimal" placeholder="ex.: 200"></div>
+    <div><label for="larg">Largura (cm)</label><input id="larg" inputmode="decimal" placeholder="ex.: 100"></div>
+    <div><label for="esp">Espessura (cm)</label><input id="esp" inputmode="decimal" placeholder="ex.: 10"></div>
+  </div>
+  <div class="row">
+    <div><label for="peso">Peso</label><input id="peso" inputmode="decimal" placeholder="ex.: 2,6"></div>
+    <div><label for="un">Unidade do peso</label><select id="un"><option value="kg">kg</option><option value="g">g</option></select></div>
+  </div>
+  <h3>Registro da amostra</h3>
+  <div class="row">
+    <div><label for="origem">Origem da amostra</label><input id="origem" placeholder="ex.: Fornecedor X, lote 123"></div>
+    <div><label for="fab">Data de fabricação</label><input id="fab" type="date"></div>
+  </div>
+  <div class="btns">
+    <button class="btn" id="calcE">Calcular densidade</button>
+    <button class="btn sec" id="addE" disabled>Adicionar à lista</button>
+  </div>
+  <div class="res" id="resE" aria-live="polite"><span class="empty">Informe as medidas e o peso do bloco.</span></div>
+</section>
+
+<!-- COLCHÃO -->
+<section class="panel" id="p4" role="tabpanel" hidden>
+  <h3 style="margin-top:0">Medidas do colchão</h3>
+  <div class="row">
+    <div><label for="mc">Comprimento (cm)</label><input id="mc" inputmode="decimal" placeholder="ex.: 188"></div>
+    <div><label for="ml">Largura (cm)</label><input id="ml" inputmode="decimal" placeholder="ex.: 138"></div>
+    <div><label for="ma">Altura total (cm)</label><input id="ma" inputmode="decimal" placeholder="ex.: 25"></div>
+  </div>
+  <p class="empty" id="lamInfo" style="font-size:.85rem;margin:6px 0 0"></p>
+
+  <h3>Borda perimetral: longarinas e cabeceiras</h3>
+  <div class="row">
+    <div><label for="et">Tipo de estrutura</label><select id="et"><option value="15">Padrão (altura 15 cm)</option><option value="10">Colchão baixo (altura 10 cm)</option></select></div>
+    <div><label for="mat">Material</label><select id="mat"><option value="26">Espuma</option><option value="">Madeira</option></select></div>
+    <div><label for="wd">Densidade (kg/m³)</label><input id="wd" inputmode="decimal" value="26"></div>
+  </div>
+  <div class="row">
+    <div><label for="lge">Longarina: espessura (cm)</label><input id="lge" inputmode="decimal" value="8"></div>
+    <div><label for="lga">Longarina: altura (cm)</label><input id="lga" inputmode="decimal" value="15"></div>
+    <div><label for="cbe">Cabeceira: espessura (cm)</label><input id="cbe" inputmode="decimal" value="12"></div>
+    <div><label for="cba">Cabeceira: altura (cm)</label><input id="cba" inputmode="decimal" value="15"></div>
+  </div>
+
+  <h3>Molejo</h3>
+  <div class="row">
+    <div><label for="sl">Fileiras na largura</label><input id="sl" inputmode="numeric" placeholder="ex.: 11"></div>
+    <div><label for="sc">Fileiras no comprimento</label><input id="sc" inputmode="numeric" placeholder="ex.: 20"></div>
+    <div><label for="mg">Peso de cada mola (g)</label><input id="mg" inputmode="decimal" placeholder="ex.: 25"></div>
+    <div><label for="md">Molas por m² (se as fileiras estiverem vazias)</label><input id="md" inputmode="decimal" value="170"></div>
+  </div>
+  <p class="empty" id="molasTot" style="font-size:.85rem;margin:6px 0 0"></p>
+
+  <h3>Lâminas de espuma</h3>
+  <div id="laminas"></div>
+  <div class="btns" style="margin-top:8px"><button class="btn sec" id="addLam">+ Adicionar lâmina</button></div>
+
+  <h3>Tampo</h3>
+  <div class="row"><div><label for="gt">Tecido do tampo (g/m²)</label><input id="gt" inputmode="decimal" placeholder="ex.: 200"></div></div>
+  <div id="camTampo"></div>
+  <div class="btns" style="margin-top:8px"><button class="btn sec" id="addTam">+ Adicionar camada do tampo (D20, visco...)</button></div>
+
+  <h3>Faixa</h3>
+  <div class="row">
+    <div><label for="gf">Tecido da faixa (g/m²)</label><input id="gf" inputmode="decimal" placeholder="ex.: 150"></div>
+    <div><label for="tnt">TNT da faixa (g/m²)</label><input id="tnt" inputmode="decimal" value="12"></div>
+  </div>
+  <div class="row">
+    <div><label for="fe">Espessura da espuma da faixa (cm)</label><input id="fe" inputmode="decimal" value="1"></div>
+    <div><label for="fd">Densidade da espuma da faixa (kg/m³)</label><input id="fd" inputmode="decimal" value="20"></div>
+  </div>
+
+  <h3>Base e outros</h3>
+  <div class="row">
+    <div><label for="gb">Tecido da base / fundo (g/m²)</label><input id="gb" inputmode="decimal"></div>
+    <div><label for="mo">Outros itens (kg): arame, cola, etiquetas...</label><input id="mo" inputmode="decimal"></div>
+  </div>
+  <div class="res" id="resM" aria-live="polite"></div>
+  <div class="btns"><button class="btn" id="addM" disabled>Adicionar à lista</button></div>
+</section>
+
+<!-- CALCULADORA -->
+<section class="panel" id="p3" role="tabpanel" hidden>
+  <input id="disp" inputmode="none" autocomplete="off" aria-label="Expressão" placeholder="0">
+  <div id="cres" aria-live="polite"></div>
+  <div class="keys" id="keys"></div>
+  <div class="btns"><button class="btn sec" id="addC" disabled>Adicionar à lista</button></div>
+</section>
+
+<h2>Resultados guardados</h2>
+<div class="wrap" id="lista"><span class="empty">Nenhum resultado ainda.</span></div>
+<div class="btns">
+  <button class="btn" id="docx">Baixar Word (.docx)</button>
+  <button class="btn" id="xlsx">Baixar Excel (.xlsx)</button>
+  <button class="btn sec" id="csv">Baixar CSV</button>
+  <button class="btn sec" id="txt">Baixar TXT</button>
+  <button class="btn sec" id="limpar">Limpar lista</button>
+</div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const num=v=>parseFloat(String(v).trim().replace(',','.'));
+const fmt=(n,d=2)=>n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const classes=[16,18,20,23,26,28,33,40,45,50];
+const dataBR=s=>s?s.split('-').reverse().join('/'):'';
+let itens=[],atual={T:null,E:null,C:null};
+
+// abas
+['1','2','3','4'].forEach(n=>{$('t'+n).onclick=()=>['1','2','3','4'].forEach(m=>{
+  $('t'+m).setAttribute('aria-selected',m===n);$('p'+m).hidden=m!==n;});});
+const erro=(el,m)=>{el.innerHTML='<span class="err">'+m+'</span>'};
+
+// TRIÂNGULO
+const campos=[['a','Comprimento do lado a'],['b','Comprimento do lado b'],['c','Comprimento do lado c'],['A','Ângulo α'],['B','Ângulo β'],['S','Área']];
+const modos={1:['a','b','c'],2:['c','A','B'],3:['a','b','c','A','B'],4:['S','a','b']};
+const el={};let user={},ultimoT='';
+const suf=k=>k==='A'||k==='B'?'°':k==='S'?$('ul').value+'²':$('ul').value;
+const f4=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:4});
+campos.forEach(([k,nome])=>{
+  const w=document.createElement('div');
+  w.innerHTML='<label for="f'+k+'">'+nome+'</label><div class="f" id="w'+k+'"><input id="f'+k+'" inputmode="decimal" autocomplete="off"><span id="s'+k+'"></span></div>';
+  $('campos').appendChild(w);el[k]=$('f'+k);
+  el[k].addEventListener('input',()=>{user[k]=el[k].value.trim()!=='';resolve()});
+  el[k].addEventListener('focus',()=>{if(!user[k])el[k].select()});
+});
+const paint=()=>campos.forEach(([k])=>{$('w'+k).className='f'+(!user[k]&&el[k].value!==''?' calc':'')});
+function resolve(){
+  const ed=modos[$('modo').value],r=Math.PI/180,v={};let bad=false;
+  campos.forEach(([k])=>{
+    el[k].readOnly=!ed.includes(k);$('s'+k).textContent=suf(k);
+    if(el[k].readOnly)user[k]=false;
+    if(user[k]){const n=num(el[k].value);if(n>0)v[k]=n;else bad=true}
+  });
+  atual.T=null;ultimoT='';$('addT').disabled=true;
+  const fim=m=>{campos.forEach(([k])=>{if(!user[k])el[k].value=''});paint();$('resT').innerHTML=m};
+  if(bad)return fim('<span class="err">Use números maiores que zero.</span>');
+  let {a,b,c,A,B,S}=v;
+  const ang=A!==undefined?A:(B!==undefined?90-B:undefined);
+  try{
+    if(['a','b','c'].filter(k=>v[k]!==undefined).length===3)throw 'Informe apenas dois lados; o terceiro é calculado.';
+    if(ang!==undefined){
+      if(ang>=90)throw 'O ângulo deve ser menor que 90°.';
+      const t=ang*r;
+      if(a!==undefined){b=a/Math.tan(t);c=a/Math.sin(t)}
+      else if(b!==undefined){a=b*Math.tan(t);c=b/Math.cos(t)}
+      else if(c!==undefined){a=c*Math.sin(t);b=c*Math.cos(t)}
+      else throw 'need';
+    }else if(S!==undefined&&(a!==undefined||b!==undefined)){
+      if(a!==undefined)b=2*S/a;else a=2*S/b;
+      c=Math.hypot(a,b);
+    }else if(a!==undefined&&b!==undefined)c=Math.hypot(a,b);
+    else if(a!==undefined&&c!==undefined){if(c<=a)throw 'A hipotenusa deve ser maior que o lado a.';b=Math.sqrt(c*c-a*a)}
+    else if(b!==undefined&&c!==undefined){if(c<=b)throw 'A hipotenusa deve ser maior que o lado b.';a=Math.sqrt(c*c-b*b)}
+    else throw 'need';
+  }catch(e){
+    return fim(e==='need'?'<span class="empty">Preencha os campos para ver o resultado.</span>':'<span class="err">'+e+'</span>');
+  }
+  const al=Math.atan2(a,b)/r,be=90-al,area=a*b/2,vals={a,b,c,A:al,B:be,S:area};
+  campos.forEach(([k])=>{if(!user[k])el[k].value=f4(vals[k])});paint();
+  const u=$('ul').value,sn=g=>fmt(Math.sin(g*r),4),cs=g=>fmt(Math.cos(g*r),4),tn=g=>fmt(Math.tan(g*r),4);
+  const lin=(n,l,g,t)=>'<tr><td>'+n+'</td><td>'+l+'</td><td>'+fmt(g)+'°</td><td>'+sn(g)+'</td><td>'+cs(g)+'</td><td>'+t+'</td></tr>';
+  $('resT').innerHTML='Área: <b>'+fmt(area)+' '+u+'²</b><br>Hipotenusa c: '+fmt(c)+' '+u+
+   '<div class="wrap"><table><tr><th>Ângulo</th><th>Lado oposto</th><th>Grau</th><th>Seno</th><th>Cosseno</th><th>Tangente</th></tr>'+
+   lin('α','a = '+fmt(a)+' '+u,al,tn(al))+lin('β','b = '+fmt(b)+' '+u,be,tn(be))+lin('90° (reto)','c = '+fmt(c)+' '+u,90,'indefinida')+'</table></div>';
+  const ent='a = '+fmt(a)+' '+u+'; b = '+fmt(b)+' '+u+'; c = '+fmt(c)+' '+u;
+  const res='área '+fmt(area)+' '+u+'²; α = '+fmt(al)+'° (sen '+sn(al)+', cos '+cs(al)+', tan '+tn(al)+'); β = '+fmt(be)+'° (sen '+sn(be)+', cos '+cs(be)+', tan '+tn(be)+'); ângulo reto 90°';
+  const dados=campos.filter(([k])=>user[k]).map(([k,n])=>n+' = '+el[k].value+' '+suf(k)).join('; ');
+  atual.T={tipo:'Triângulo retângulo',entrada:ent,resultado:res,origem:'',fab:'',passos:[
+    'Dados informados: '+dados+'. Os demais valores foram calculados a partir deles.',
+    'Num triângulo retângulo, os lados a e b formam o ângulo reto (90°) e c é a hipotenusa, o lado oposto ao ângulo reto. O ângulo α fica oposto ao lado a e o ângulo β fica oposto ao lado b.',
+    'Hipotenusa (teorema de Pitágoras): c = √(a² + b²) = √('+fmt(a)+'² + '+fmt(b)+'²) = '+fmt(c)+' '+u+'.',
+    'Ângulo α: tan α = a ÷ b = '+fmt(a)+' ÷ '+fmt(b)+' = '+fmt(a/b,4)+', então α = arctan('+fmt(a/b,4)+') = '+fmt(al)+'°.',
+    'Ângulo β: a soma dos ângulos de um triângulo é 180° e um deles é 90°, então β = 90° − α = 90° − '+fmt(al)+'° = '+fmt(be)+'°.',
+    'Área = (a × b) ÷ 2 = ('+fmt(a)+' × '+fmt(b)+') ÷ 2 = '+fmt(area)+' '+u+'².',
+    'Para α: seno = oposto ÷ hipotenusa = a ÷ c = '+fmt(a/c,4)+'; cosseno = adjacente ÷ hipotenusa = b ÷ c = '+fmt(b/c,4)+'; tangente = oposto ÷ adjacente = a ÷ b = '+fmt(a/b,4)+'.',
+    'Para β os papéis dos lados se invertem: seno = b ÷ c = '+fmt(b/c,4)+'; cosseno = a ÷ c = '+fmt(a/c,4)+'; tangente = b ÷ a = '+fmt(b/a,4)+'. Os valores são arredondados na exibição.'],
+    tabela:{cab:['Ângulo','Lado oposto','Grau (°)','Seno','Cosseno','Tangente'],w:[16,28,14,14,14,14],dec:[0,0,2,4,4,4],xs:[2,2,3,5,5,5],
+      lin:[['α','a = '+fmt(a)+' '+u,al,Math.sin(al*r),Math.cos(al*r),Math.tan(al*r)],['β','b = '+fmt(b)+' '+u,be,Math.sin(be*r),Math.cos(be*r),Math.tan(be*r)],['90° (reto)','c = '+fmt(c)+' '+u,90,1,0,'indefinida']]}};
+  ultimoT='Triângulo retângulo\n'+ent+'\n'+res;
+  $('addT').disabled=false;
+}
+function resetT(){user={};campos.forEach(([k])=>{el[k].value=''});resolve()}
+resolve();
+$('modo').onchange=resetT;$('limpaT').onclick=resetT;$('ul').onchange=resolve;
+$('shareT').onclick=()=>{
+  if(!ultimoT)return;const b=$('shareT');
+  (navigator.clipboard?navigator.clipboard.writeText(ultimoT):Promise.reject()).then(()=>{b.textContent='Copiado!'},()=>{prompt('Copie o resultado:',ultimoT)});
+  setTimeout(()=>{b.textContent='Compartilhar resultado'},1800);
+};
+
+// ESPUMA
+$('calcE').onclick=()=>{
+  const c=num($('comp').value),l=num($('larg').value),e=num($('esp').value);
+  let p=num($('peso').value);
+  atual.E=null;$('addE').disabled=true;
+  if(!(c>0&&l>0&&e>0&&p>0))return erro($('resE'),'Preencha todas as medidas e o peso com valores maiores que zero.');
+  if($('un').value==='g')p/=1000;
+  const m3=c*l*e/1e6,d=p/m3;
+  const prox=classes.reduce((a,b)=>Math.abs(b-d)<Math.abs(a-d)?b:a);
+  const o=$('origem').value.trim(),f=dataBR($('fab').value);
+  $('resE').innerHTML='Densidade: <b>'+fmt(d)+' kg/m³</b><br>Volume: '+fmt(m3,4)+' m³<br>Classe mais próxima: D'+prox+
+    '<br>Origem: '+(o||'não informada')+'<br>Fabricação: '+(f||'não informada');
+  const un=$('un').value,pt=$('peso').value;
+  atual.E={tipo:'Espuma',entrada:c+'x'+l+'x'+e+' cm; '+fmt(p,3)+' kg',resultado:fmt(d)+' kg/m³ (D'+prox+')',origem:o,fab:f,passos:[
+    'Dados informados: bloco de '+fmt(c,1)+' × '+fmt(l,1)+' × '+fmt(e,1)+' cm (comprimento × largura × espessura), pesando '+pt+' '+un+'.',
+    'Volume = comprimento × largura × espessura = '+fmt(c,1)+' × '+fmt(l,1)+' × '+fmt(e,1)+' = '+fmt(c*l*e,0)+' cm³. Como 1 m³ = 1.000.000 cm³, o volume é '+fmt(m3,4)+' m³.',
+    un==='g'?'Peso em kg = '+pt+' g ÷ 1000 = '+fmt(p,3)+' kg.':'Peso usado no cálculo: '+fmt(p,3)+' kg.',
+    'Densidade = peso ÷ volume = '+fmt(p,3)+' ÷ '+fmt(m3,4)+' = '+fmt(d)+' kg/m³.',
+    'As espumas são classificadas por densidade (D18, D20, D23, D26, D28, D33...). A classe mais próxima de '+fmt(d)+' kg/m³ é D'+prox+', com diferença de '+fmt(Math.abs(d-prox))+' kg/m³.']};
+  $('addE').disabled=false;
+};
+
+// CALCULADORA (sem eval)
+function avalia(s){
+  const t=s.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/,/g,'.').replace(/\s/g,'');
+  if(!t)return null;
+  const tk=t.match(/\d+\.?\d*|\.\d+|[-+*/()%]/g);
+  if(!tk||tk.join('')!==t)throw 0;
+  let i=0;
+  const prim=()=>{
+    let v;
+    if(tk[i]==='('){i++;v=soma();if(tk[i++]!==')')throw 0}
+    else if(tk[i]==='-'){i++;return -prim()}
+    else if(tk[i]==='+'){i++;return prim()}
+    else if(i<tk.length&&/^[\d.]/.test(tk[i]))v=parseFloat(tk[i++]);
+    else throw 0;
+    while(tk[i]==='%'){i++;v/=100}
+    return v;
+  };
+  const mult=()=>{let v=prim();while(tk[i]==='*'||tk[i]==='/'){const o=tk[i++],r=prim();if(o==='/'&&r===0)throw 1;v=o==='*'?v*r:v/r}return v};
+  const soma=()=>{let v=mult();while(tk[i]==='+'||tk[i]==='-'){const o=tk[i++],r=mult();v=o==='+'?v+r:v-r}return v};
+  const r=soma();if(i<tk.length)throw 0;return r;
+}
+['C','⌫','(',')','7','8','9','÷','4','5','6','×','1','2','3','−','0',',','%','+'].forEach(k=>{
+  const b=document.createElement('button');b.textContent=k;
+  if('÷×−+%()'.includes(k)||k==='C'||k==='⌫')b.className='op';
+  b.onclick=()=>{
+    const d=$('disp');
+    if(k==='C'){d.value='';$('cres').textContent='';atual.C=null;$('addC').disabled=true}
+    else if(k==='⌫')d.value=d.value.slice(0,-1);
+    else d.value+=k;
+    d.focus();live();
+  };
+  $('keys').appendChild(b);
+});
+const eq=document.createElement('button');eq.textContent='=';eq.className='eq';eq.style.gridColumn='1 / -1';
+function live(forte){
+  const ex=$('disp').value;atual.C=null;$('addC').disabled=true;
+  try{
+    const r=avalia(ex);
+    if(r===null){$('cres').textContent='';return null}
+    if(!isFinite(r))throw 0;
+    const txt=r.toLocaleString('pt-BR',{maximumFractionDigits:10});
+    $('cres').textContent='= '+txt;
+    atual.C={tipo:'Cálculo',entrada:ex,resultado:txt,origem:'',fab:'',passos:[
+      'Expressão digitada: '+ex+'.',
+      'A conta segue a ordem matemática: primeiro os parênteses, depois % , multiplicação e divisão, e por último soma e subtração.',
+      'Resultado: '+txt+'.']};
+    $('addC').disabled=false;
+    return r;
+  }catch(e){
+    $('cres').innerHTML=e===1?'<span class="err">Divisão por zero.</span>':(forte?'<span class="err">Expressão inválida. Confira os números e parênteses.</span>':'');
+    return null;
+  }
+}
+eq.onclick=()=>{const r=live(true);if(r!==null){$('disp').value=String(Math.round(r*1e10)/1e10).replace('.',',');$('disp').focus()}};
+$('keys').appendChild(eq);
+$('disp').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();eq.click()}});
+$('disp').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\*/g,'×').replace(/\//g,'÷').replace(/-/g,'−');live()});
+
+// COLCHÃO
+function novaCamada(box){
+  const d=document.createElement('div');d.className='row';d.style.alignItems='flex-end';
+  d.innerHTML='<div style="flex:2"><label>Camada<input class="cn" placeholder="ex.: Espuma D33"></label></div>'+
+    '<div><label>Espessura (cm)<input class="ce" inputmode="decimal"></label></div>'+
+    '<div><label>Densidade (kg/m³)<input class="cd" inputmode="decimal"></label></div>'+
+    '<button class="lnk" type="button" aria-label="Remover camada">✕</button>';
+  d.querySelector('button').onclick=()=>{d.remove();calcM()};
+  $(box).appendChild(d);
+}
+function camadas(box,area,grupo,pre,parts){
+  let i=0;
+  document.querySelectorAll('#'+box+' .row').forEach(d=>{
+    i++;const e=num(d.querySelector('.ce').value)/100,dn=num(d.querySelector('.cd').value);
+    if(e>0&&dn>0)parts.push([grupo,pre+(d.querySelector('.cn').value.trim()||'camada '+i),area*e*dn,fmt(area,3)+' m² × '+fmt(e*100,1)+' cm (= '+fmt(e,3)+' m) × '+fmt(dn,0)+' kg/m³']);
+  });
+}
+function calcM(){
+  const c=num($('mc').value)/100,l=num($('ml').value)/100,h=num($('ma').value)/100;
+  const z=id=>{const n=num($(id).value);return n>0?n:0};
+  atual.M=null;$('addM').disabled=true;
+  if(!(c>0.02&&l>0.02)){$('lamInfo').textContent='';$('molasTot').textContent='';$('resM').innerHTML='<span class="empty">Informe o comprimento e a largura do colchão.</span>';return}
+  const lc=c-0.02,ll=l-0.02,area=c*l,areaLam=lc*ll,per=2*(c+l),parts=[],passos=[];let aviso='';
+  $('lamInfo').textContent='Lâminas: '+fmt(lc*100,1)+' × '+fmt(ll*100,1)+' cm (1 cm a menos de cada lado, por causa da faixa).';
+  passos.push('Medidas: colchão de '+fmt(c*100,1)+' × '+fmt(l*100,1)+(h>0?' × '+fmt(h*100,1):'')+' cm. A faixa (tecido, TNT e espuma de 1 cm) ocupa 1 cm de cada lado, então as lâminas e a borda interna medem '+fmt(lc*100,1)+' × '+fmt(ll*100,1)+' cm (área de '+fmt(areaLam,3)+' m²).');
+  const lE=z('lge')/100,lA=z('lga')/100,cE=z('cbe')/100,cA=z('cba')/100,wd=z('wd');
+  const mt=$('mat').selectedIndex===0?'espuma D'+fmt(wd,0):'madeira';
+  let livre=0;
+  if(lE>0&&cE>0){
+    const lonLen=lc-2*cE,livL=ll-2*lE;
+    if(lonLen>0&&livL>0){
+      livre=lonLen*livL;
+      $('lamInfo').innerHTML+='<br>Cabeceiras: 2 × '+fmt(ll*100,1)+' cm. Longarinas: 2 × '+fmt(lonLen*100,1)+' cm. Área livre para molas: '+fmt(livre,2)+' m².';
+      passos.push('Borda perimetral: as 2 cabeceiras vão de lado a lado ('+fmt(ll*100,1)+' cm) e as 2 longarinas ficam entre elas ('+fmt(lc*100,1)+' − 2 × '+fmt(cE*100,0)+' = '+fmt(lonLen*100,1)+' cm). A área livre para as molas é '+fmt(lonLen*100,1)+' × '+fmt(livL*100,1)+' cm = '+fmt(livre,3)+' m².');
+      if(wd>0&&lA>0&&cA>0){
+        parts.push(['Borda perimetral','Cabeceiras de '+mt+' (2 × '+fmt(ll*100,1)+' cm)',2*ll*cE*cA*wd,'2 × '+fmt(ll,2)+' m × '+fmt(cE,2)+' m × '+fmt(cA,2)+' m × '+fmt(wd,0)+' kg/m³']);
+        parts.push(['Borda perimetral','Longarinas de '+mt+' (2 × '+fmt(lonLen*100,1)+' cm)',2*lonLen*lE*lA*wd,'2 × '+fmt(lonLen,2)+' m × '+fmt(lE,2)+' m × '+fmt(lA,2)+' m × '+fmt(wd,0)+' kg/m³']);
+      }
+    }else aviso+='<br><span class="err">A estrutura é grande demais para essas medidas.</span>';
+  }
+  camadas('laminas',areaLam,'Lâminas','',parts);
+  const nl=Math.floor(z('sl')),nc=Math.floor(z('sc'));
+  let nm=nl*nc,om=nl+' × '+nc+' fileiras';
+  if(!(nm>0)&&livre>0&&z('md')>0){nm=Math.round(livre*z('md'));om='área livre '+fmt(livre,3)+' m² × '+fmt(z('md'),0)+' molas/m²'}
+  $('molasTot').textContent=nm>0?'Total de molas: '+nm+' ('+om+')':'';
+  if(nm>0){
+    passos.push('Molas: '+nm+' ('+om+').');
+    if(z('mg')>0)parts.push(['Molas','Molas ('+nm+')',nm*z('mg')/1000,nm+' molas × '+fmt(z('mg'),0)+' g ÷ 1000']);
+  }
+  if(z('gt')>0)parts.push(['Tampo','Tampo: tecido',area*z('gt')/1000,fmt(area,3)+' m² × '+fmt(z('gt'),0)+' g/m² ÷ 1000']);
+  camadas('camTampo',area,'Tampo','Tampo: ',parts);
+  if(z('gf')>0||z('tnt')>0||(z('fe')>0&&z('fd')>0)){
+    if(h>0){
+      const fa=per*h,fx=fmt(fa,3)+' m² (perímetro '+fmt(per,2)+' m × altura '+fmt(h,2)+' m)';
+      if(z('gf')>0)parts.push(['Faixa','Faixa: tecido',fa*z('gf')/1000,fx+' × '+fmt(z('gf'),0)+' g/m² ÷ 1000']);
+      if(z('tnt')>0)parts.push(['Faixa','Faixa: TNT',fa*z('tnt')/1000,fx+' × '+fmt(z('tnt'),0)+' g/m² ÷ 1000']);
+      if(z('fe')>0&&z('fd')>0)parts.push(['Faixa','Faixa: espuma D'+fmt(z('fd'),0),fa*z('fe')/100*z('fd'),fx+' × '+fmt(z('fe'),1)+' cm (= '+fmt(z('fe')/100,3)+' m) × '+fmt(z('fd'),0)+' kg/m³']);
+    }else aviso+='<br><span class="err">Informe a altura total para incluir a faixa.</span>';
+  }
+  if(z('gb')>0)parts.push(['Base','Base: tecido',area*z('gb')/1000,fmt(area,3)+' m² × '+fmt(z('gb'),0)+' g/m² ÷ 1000']);
+  if(z('mo')>0)parts.push(['Outros','Outros itens',z('mo'),'valor informado em kg']);
+  const tot=parts.reduce((t,p)=>t+p[2],0);
+  if(!(tot>0)){$('resM').innerHTML='<span class="empty">Preencha lâminas, molas, tampo ou faixa.</span>'+aviso;return}
+  passos.push('Peso de cada item: espumas e madeira = volume (m³) × densidade (kg/m³); tecidos e TNT = área (m²) × gramatura (g/m²) ÷ 1000; molas = quantidade × peso de cada mola (g) ÷ 1000. O peso total, '+fmt(tot)+' kg, é a soma de todos os componentes.');
+  const es=t=>String(t).replace(/</g,'&lt;');
+  $('resM').innerHTML='Peso estimado: <b>'+fmt(tot)+' kg</b>'+aviso+
+    '<div class="wrap"><table><tr><th>Grupo</th><th>Componente</th><th>Peso (kg)</th><th>%</th><th>Como foi calculado</th></tr>'+
+    parts.map(p=>'<tr><td>'+p[0]+'</td><td>'+es(p[1])+'</td><td>'+fmt(p[2])+'</td><td>'+fmt(p[2]/tot*100,1)+'%</td><td>'+p[3]+'</td></tr>').join('')+'</table></div>'+
+    '<p class="empty" style="font-size:.85rem;margin:8px 0 0">Estimativa: o peso real varia com o fornecedor e o processo. Compare com um colchão pesado na balança e ajuste os valores.</p>';
+  const g={};parts.forEach(p=>{g[p[0]]=(g[p[0]]||0)+p[2]});
+  atual.M={tipo:'Colchão',entrada:fmt(c*100,1)+' x '+fmt(l*100,1)+(h>0?' x '+fmt(h*100,1):'')+' cm'+(nm>0?'; '+nm+' molas':''),
+    resultado:'peso estimado '+fmt(tot)+' kg ('+Object.entries(g).map(([k,v])=>k+' '+fmt(v)+' kg').join('; ')+')',origem:'',fab:'',passos,
+    tabela:{cab:['Grupo','Componente','Peso (kg)','%','Como foi calculado'],w:[13,24,10,7,46],dec:[0,0,2,1,0],xs:[2,2,3,3,2],
+      lin:parts.map(p=>[p[0],p[1],p[2],p[2]/tot*100,p[3]]).concat([['','TOTAL',tot,100,'Soma de todos os componentes']])}};
+  $('addM').disabled=false;
+}
+novaCamada('laminas');novaCamada('laminas');novaCamada('camTampo');
+$('addLam').onclick=()=>{novaCamada('laminas');calcM()};
+$('addTam').onclick=()=>{novaCamada('camTampo');calcM()};
+$('p4').addEventListener('input',calcM);
+$('mat').onchange=()=>{$('wd').value=$('mat').value;$('wd').placeholder=$('mat').selectedIndex?'ex.: 550':'';calcM()};
+$('et').onchange=()=>{$('lga').value=$('et').value;$('cba').value=$('et').value;calcM()};
+calcM();
+$('addM').onclick=()=>add('M',$('addM'));
+
+// LISTA
+function add(k,btn){
+  if(!atual[k])return;
+  itens.push({...atual[k],hora:new Date().toLocaleString('pt-BR')});
+  atual[k]=null;btn.disabled=true;desenha();
+}
+$('addT').onclick=()=>add('T',$('addT'));
+$('addE').onclick=()=>add('E',$('addE'));
+$('addC').onclick=()=>add('C',$('addC'));
+function desenha(){
+  if(!itens.length){$('lista').innerHTML='<span class="empty">Nenhum resultado ainda.</span>';return}
+  $('lista').innerHTML='<table><tr><th>Tipo</th><th>Dados</th><th>Resultado</th><th>Origem</th><th>Fabricação</th></tr>'+
+    itens.map(i=>'<tr><td>'+i.tipo+'</td><td>'+i.entrada+'</td><td>'+i.resultado+'</td><td>'+(i.origem||'-')+'</td><td>'+(i.fab||'-')+'</td></tr>').join('')+'</table>';
+}
+$('limpar').onclick=()=>{itens=[];desenha()};
+
+// DOWNLOAD
+function baixar(nome,texto,tipo){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([texto],{type:tipo}));
+  a.download=nome;document.body.appendChild(a);a.click();a.remove();
+}
+const vazio=()=>{if(!itens.length){alert('Adicione ao menos um resultado à lista antes de baixar.');return true}};
+// RELATÓRIO
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function crc32(b){
+  const t=crc32.t||(crc32.t=Array.from({length:256},(_,n)=>{let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;return c>>>0}));
+  let r=-1;for(const x of b)r=t[(r^x)&255]^(r>>>8);return(r^-1)>>>0;
+}
+function zip(files){
+  const en=new TextEncoder(),parts=[],cen=[];let off=0,cnt=0;
+  for(const n in files){
+    const nb=en.encode(n),db=en.encode(files[n]),crc=crc32(db);
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint32(14,crc,true);h.setUint32(18,db.length,true);h.setUint32(22,db.length,true);h.setUint16(26,nb.length,true);
+    parts.push(new Uint8Array(h.buffer),nb,db);
+    const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint32(16,crc,true);c.setUint32(20,db.length,true);c.setUint32(24,db.length,true);c.setUint16(28,nb.length,true);c.setUint32(42,off,true);
+    cen.push(new Uint8Array(c.buffer),nb);off+=30+nb.length+db.length;cnt++;
+  }
+  const csz=cen.reduce((a,x)=>a+x.length,0),e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,cnt,true);e.setUint16(10,cnt,true);e.setUint32(12,csz,true);e.setUint32(16,off,true);
+  return [...parts,...cen,new Uint8Array(e.buffer)];
+}
+function salvar(nome,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nome;document.body.appendChild(a);a.click();a.remove()}
+const XH='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',RT='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+const RELS=(t,tg)=>XH+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="'+RT+'/'+t+'" Target="'+tg+'"/></Relationships>';
+// Word
+const wr=(t,o={})=>'<w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>'+(o.b?'<w:b/>':'')+(o.i?'<w:i/>':'')+(o.c?'<w:color w:val="'+o.c+'"/>':'')+'<w:sz w:val="'+(o.s||22)+'"/></w:rPr><w:t xml:space="preserve">'+esc(t)+'</w:t></w:r>';
+const wp=(t,o={})=>'<w:p><w:pPr>'+(o.bd?'<w:pBdr><w:bottom w:val="single" w:sz="8" w:space="2" w:color="2F6FED"/></w:pBdr>':'')+'<w:spacing w:before="'+(o.sb||0)+'" w:after="'+(o.sa===undefined?80:o.sa)+'"/></w:pPr>'+(Array.isArray(t)?t.join(''):wr(t,o))+'</w:p>';
+const wt=(rows,pc)=>{
+  const pw=pc||rows[0].map(()=>100/rows[0].length),dx=pw.map(x=>Math.round(9900*x/100));
+  const bd=['top','left','bottom','right','insideH','insideV'].map(k=>'<w:'+k+' w:val="single" w:sz="4" w:space="0" w:color="BFC9D6"/>').join('');
+  return '<w:tbl><w:tblPr><w:tblW w:w="9900" w:type="dxa"/><w:tblBorders>'+bd+'</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>'+dx.map(x=>'<w:gridCol w:w="'+x+'"/>').join('')+'</w:tblGrid>'+
+    rows.map((r,i)=>'<w:tr>'+r.map((c,ci)=>'<w:tc><w:tcPr><w:tcW w:w="'+dx[ci]+'" w:type="dxa"/>'+(i===0?'<w:shd w:val="clear" w:color="auto" w:fill="2F6FED"/>':'')+'</w:tcPr>'+wp(String(c),{s:18,b:i===0,c:i===0?'FFFFFF':null,sa:20})+'</w:tc>').join('')+'</w:tr>').join('')+'</w:tbl>'+wp('',{s:8,sa:60});
+};
+function docxBlob(){
+  const w=[];
+  w.push(wp('Relatório de Cálculos',{b:1,s:40,c:'2F6FED',sa:60}));
+  w.push(wp('Gerado em '+new Date().toLocaleString('pt-BR')+' · '+itens.length+' cálculo(s)',{s:20,c:'667789',sa:200}));
+  w.push(wp('Resumo',{b:1,s:28,sa:80}));
+  w.push(wt([['Nº','Tipo','Resultado','Origem','Fabricação']].concat(itens.map((i,n)=>[n+1,i.tipo,i.resultado,i.origem||'—',i.fab||'—'])),[6,16,46,18,14]));
+  itens.forEach((i,n)=>{
+    w.push(wp((n+1)+'. '+i.tipo,{b:1,s:30,sb:320,sa:100,bd:1,c:'1D2B3A'}));
+    w.push(wp('Calculado em '+i.hora,{s:18,c:'667789'}));
+    if(i.origem||i.fab)w.push(wt([['Origem da amostra','Data de fabricação'],[i.origem||'—',i.fab||'—']]));
+    w.push(wp([wr('Dados informados: ',{b:1}),wr(i.entrada)],{sb:80}));
+    w.push(wp([wr('Resultado: ',{b:1}),wr(i.resultado,{b:1,c:'2F6FED'})],{sa:120}));
+    if(i.tabela)w.push(wt([i.tabela.cab].concat(i.tabela.lin.map(r=>r.map((c,ci)=>typeof c==='number'?fmt(c,i.tabela.dec[ci]):c))),i.tabela.w));
+    w.push(wp('Como chegamos a esse resultado',{b:1,s:24,sb:120,sa:60}));
+    (i.passos||[]).forEach((t,k)=>w.push(wp((k+1)+'. '+t,{sa:60})));
+  });
+  w.push(wp('Os valores são estimativas calculadas a partir dos dados informados e podem diferir do produto real. Arredondamentos podem alterar a última casa decimal.',{i:1,s:18,c:'667789',sb:300}));
+  const doc=XH+'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+w.join('')+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1000" w:right="1000" w:bottom="1000" w:left="1000" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+  return new Blob(zip({
+    '[Content_Types].xml':XH+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',
+    '_rels/.rels':RELS('officeDocument','word/document.xml'),
+    'word/document.xml':doc}),{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+// Excel
+function sheetXml(rows,widths){
+  const col=i=>String.fromCharCode(65+i);
+  return XH+'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>'+widths.map((x,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+x+'" customWidth="1"/>').join('')+'</cols><sheetData>'+
+    rows.map((r,ri)=>'<row r="'+(ri+1)+'">'+r.map(([v,s],ci)=>{const ref=col(ci)+(ri+1);return typeof v==='number'?'<c r="'+ref+'" s="'+s+'"><v>'+v+'</v></c>':'<c r="'+ref+'" s="'+s+'" t="inlineStr"><is><t xml:space="preserve">'+esc(v)+'</t></is></c>'}).join('')+'</row>').join('')+'</sheetData></worksheet>';
+}
+function xlsxBlob(){
+  const hd=a=>a.map(x=>[x,1]);
+  const r1=[[['Relatório de cálculos',4]],[['Gerado em '+new Date().toLocaleString('pt-BR')+' · '+itens.length+' cálculo(s)',0]],[],hd(['Nº','Data/hora','Tipo','Dados informados','Resultado','Origem da amostra','Data de fabricação','Como foi calculado'])]
+    .concat(itens.map((i,n)=>[n+1,i.hora,i.tipo,i.entrada,i.resultado,i.origem||'',i.fab||'',(i.passos||[]).map((t,k)=>(k+1)+'. '+t).join('\n')].map(x=>[x,2])));
+  const sh=[['Resumo',sheetXml(r1,[6,20,18,34,44,22,18,90])]];
+  const r2=[];
+  itens.forEach((i,n)=>{if(!i.tabela)return;r2.push([[(n+1)+'. '+i.tipo+' - '+i.hora,4]]);r2.push(hd(i.tabela.cab));i.tabela.lin.forEach(r=>r2.push(r.map((x,ci)=>[x,i.tabela.xs[ci]])));r2.push([]);});
+  if(r2.length)sh.push(['Detalhes',sheetXml(r2,[18,36,14,14,14,70])]);
+  const bc='<color rgb="FFBFC9D6"/>',bs='<border><left style="thin">'+bc+'</left><right style="thin">'+bc+'</right><top style="thin">'+bc+'</top><bottom style="thin">'+bc+'</bottom><diagonal/></border>';
+  const styles=XH+'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="0.0000"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="14"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2F6FED"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>'+bs+'</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="2" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment vertical="top"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment vertical="top"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  const f={'[Content_Types].xml':XH+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sh.map((_,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+'</Types>',
+    '_rels/.rels':RELS('officeDocument','xl/workbook.xml'),
+    'xl/workbook.xml':XH+'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="'+RT+'"><sheets>'+sh.map((x,i)=>'<sheet name="'+x[0]+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets></workbook>',
+    'xl/_rels/workbook.xml.rels':XH+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sh.map((_,i)=>'<Relationship Id="rId'+(i+1)+'" Type="'+RT+'/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'<Relationship Id="rId'+(sh.length+1)+'" Type="'+RT+'/styles" Target="styles.xml"/></Relationships>',
+    'xl/styles.xml':styles};
+  sh.forEach((x,i)=>{f['xl/worksheets/sheet'+(i+1)+'.xml']=x[1]});
+  return new Blob(zip(f),{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+// FIM RELATÓRIO
+$('docx').onclick=()=>{if(vazio())return;salvar('relatorio.docx',docxBlob())};
+$('xlsx').onclick=()=>{if(vazio())return;salvar('relatorio.xlsx',xlsxBlob())};
+$('csv').onclick=()=>{
+  if(vazio())return;
+  const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+  const t='\uFEFF'+['Data/hora;Tipo;Dados;Resultado;Origem da amostra;Data de fabricação']
+    .concat(itens.map(i=>[i.hora,i.tipo,i.entrada,i.resultado,i.origem||'',i.fab||''].map(q).join(';'))).join('\r\n');
+  baixar('resultados.csv',t,'text/csv;charset=utf-8');
+};
+$('txt').onclick=()=>{
+  if(vazio())return;
+  const t='RESULTADOS\r\n\r\n'+itens.map((i,n)=>(n+1)+') '+i.tipo+' - '+i.hora+'\r\n   Dados: '+i.entrada+'\r\n   Resultado: '+i.resultado+
+    (i.origem?'\r\n   Origem da amostra: '+i.origem:'')+(i.fab?'\r\n   Data de fabricação: '+i.fab:'')+(i.passos?'\r\n   Como foi calculado:\r\n      '+i.passos.map((t,k)=>(k+1)+') '+t).join('\r\n      '):'')).join('\r\n\r\n');
+  baixar('resultados.txt',t,'text/plain;charset=utf-8');
+};
+</script>
+</body>
+</html>
