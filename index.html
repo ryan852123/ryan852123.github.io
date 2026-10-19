@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ryan – Portfólio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef2f5; --surface:#ffffff; --ink:#14213d; --muted:#4a5875; --line:#c9d3de;
+  --ok:#1e8e5a; --tag:#f2c230; --tag-ink:#14213d;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0f1624; --surface:#18233a; --ink:#e8eef7; --muted:#9fb0cb; --line:#2c3a56; --ok:#4cc38a; color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0f1624; --surface:#18233a; --ink:#e8eef7; --muted:#9fb0cb; --line:#2c3a56; --ok:#4cc38a; color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55}
+main{max-width:880px;margin:0 auto;padding:40px 20px 56px}
+h1{font-size:clamp(3rem,14vw,5.5rem);line-height:.95;margin:0;font-weight:800;letter-spacing:-.03em}
+h2{font-size:1.5rem;margin:48px 0 14px;font-weight:600}
+p{max-width:62ch;margin:0 0 12px}
+.hero{display:flex;flex-wrap:wrap;align-items:flex-end;gap:18px 24px}
+.stamp{border:3px solid var(--ok);color:var(--ok);padding:6px 14px;border-radius:6px;font-weight:800;transform:rotate(-6deg);font-size:1.05rem}
+.role{color:var(--muted);font-size:1.15rem;margin:14px 0 0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;list-style:none}
+.chips li{background:var(--surface);border:1px solid var(--line);padding:6px 14px;border-radius:999px;font-weight:600}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.card{position:relative;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:34px 16px 16px;cursor:pointer;display:block;width:100%}
+.card::before{content:"";position:absolute;top:12px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--bg);border:1px solid var(--line)}
+.card:hover{border-color:var(--ink)}
+.card:focus-visible,.btn:focus-visible,.close:focus-visible{outline:3px solid var(--tag);outline-offset:2px}
+.card b{display:block;font-size:1.1rem;overflow-wrap:anywhere}
+.tag{display:inline-block;margin-top:8px;background:var(--tag);color:var(--tag-ink);font-weight:600;font-size:.85rem;padding:2px 10px;border-radius:4px}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:24px;width:min(440px,calc(100% - 32px))}
+dialog::backdrop{background:rgba(10,16,30,.6)}
+dialog h3{margin:0 0 6px;font-size:1.4rem;overflow-wrap:anywhere}
+.btn{display:inline-block;margin-top:10px;background:var(--ink);color:var(--bg);text-decoration:none;font-weight:600;padding:10px 18px;border-radius:8px}
+.close{float:right;background:none;border:0;color:var(--muted);font:inherit;font-size:1.6rem;line-height:1;cursor:pointer}
+footer{margin-top:56px;color:var(--muted)}
+footer a{color:var(--ink);font-weight:600}
+</style>
+</head>
+<body>
+<main>
+  <div class="hero">
+    <h1>Ryan</h1>
+    <span class="stamp">Aprovado</span>
+  </div>
+  <p class="role">Inspetor da qualidade e programador</p>
+
+  <h2>Sobre mim</h2>
+  <p>Trabalho como inspetor da qualidade na Rodrigues Colchões, onde confiro se cada produto sai dentro do padrão. Esse olhar para os detalhes eu levo para a programação: gosto de código que funciona e que dá para entender.</p>
+  <p>Estudo e crio projetos em C#, HTML e CSS. Abaixo estão alguns deles.</p>
+
+  <h2>Conhecimentos</h2>
+  <ul class="chips"><li>C#</li><li>HTML</li><li>CSS</li><li>Controle de qualidade</li></ul>
+
+  <h2>Projetos</h2>
+  <p>Toque em um cartão para ver os detalhes e abrir o projeto.</p>
+  <div class="grid" id="grid"></div>
+
+  <footer>Veja todos os meus repositórios no <a href="https://github.com/ryan852123" target="_blank" rel="noopener">GitHub</a>.</footer>
+</main>
+
+<dialog id="dlg" aria-labelledby="dt">
+  <button class="close" aria-label="Fechar">×</button>
+  <h3 id="dt"></h3>
+  <span class="tag" id="dtag"></span>
+  <p id="dd" style="margin-top:14px"></p>
+  <a class="btn" id="dl" target="_blank" rel="noopener">Abrir no GitHub</a>
+</dialog>
+
+<script>
+var P=[
+ ["ni3-app","Aplicativo","Aplicativo publicado no GitHub."],
+ ["NI03","Projeto","Projeto publicado no GitHub."],
+ ["França","Projeto","Projeto publicado no GitHub."],
+ ["Ryan-Eletrotecnico","Estudos","Projeto ligado à área de eletrotécnica."],
+ ["Lili-Back","Back-end","Parte do servidor do projeto Lili."],
+ ["Lili-Front","Front-end","Parte visual do projeto Lili."],
+ ["-tutelar","Projeto","Projeto publicado no GitHub."],
+ ["amor","Projeto","Projeto publicado no GitHub."],
+ ["fps-microgame","Jogo","Microjogo de tiro em primeira pessoa."],
+ ["projeto-2d","Jogo 2D","Projeto de jogo em duas dimensões."]
+];
+var g=document.getElementById("grid"),d=document.getElementById("dlg");
+P.forEach(function(p){
+  var b=document.createElement("button");
+  b.className="card";
+  b.innerHTML="<b></b><span class='tag'></span>";
+  b.querySelector("b").textContent=p[0];
+  b.querySelector(".tag").textContent=p[1];
+  b.onclick=function(){
+    document.getElementById("dt").textContent=p[0];
+    document.getElementById("dtag").textContent=p[1];
+    document.getElementById("dd").textContent=p[2];
+    document.getElementById("dl").href="https://github.com/ryan852123/"+encodeURIComponent(p[0]);
+    d.showModal();
+  };
+  g.appendChild(b);
+});
+d.querySelector(".close").onclick=function(){d.close()};
+d.addEventListener("click",function(e){if(e.target===d)d.close()});
+</script>
+</body>
+</html>
