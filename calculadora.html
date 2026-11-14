@@ -162,6 +162,12 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
     <div><label for="mg">Peso de cada mola (g)</label><input id="mg" inputmode="decimal" placeholder="ex.: 25"></div>
     <div><label for="md">Molas por m² (se as fileiras estiverem vazias)</label><input id="md" inputmode="decimal" value="170"></div>
   </div>
+  <div class="row">
+    <div><label for="mh">Altura da mola (cm)</label><input id="mh" inputmode="decimal" placeholder="ex.: 15"></div>
+    <div><label for="mtt">TNT do ensacamento (g/m²)</label><input id="mtt" inputmode="decimal" value="70"></div>
+    <div><label for="mtw">Largura da tira de TNT (cm)</label><input id="mtw" inputmode="decimal" value="10"></div>
+    <div><label for="mtc">TNT de cima e de baixo (g/m²)</label><input id="mtc" inputmode="decimal" value="80"></div>
+  </div>
   <p class="empty" id="molasTot" style="font-size:.85rem;margin:6px 0 0"></p>
 
   <h3>Lâminas de espuma</h3>
@@ -428,10 +434,20 @@ function calcM(){
   const nl=Math.floor(z('sl')),nc=Math.floor(z('sc'));
   let nm=nl*nc,om=nl+' × '+nc+' fileiras';
   if(!(nm>0)&&livre>0&&z('md')>0){nm=Math.round(livre*z('md'));om='área livre '+fmt(livre,3)+' m² × '+fmt(z('md'),0)+' molas/m²'}
-  $('molasTot').textContent=nm>0?'Total de molas: '+nm+' ('+om+')':'';
+  $('molasTot').textContent=nm>0?'Total de molas: '+nm+' ('+om+')'+(z('mh')>0?'. Tira de TNT por mola: '+fmt(Math.max(35+(z('mh')-10)*3,10),1)+' cm × '+fmt(z('mtw')>0?z('mtw'):10,1)+' cm (mola de 10 cm = 35 cm de tira; mola de 15 cm = 50 cm)':''):'';
   if(nm>0){
     passos.push('Molas: '+nm+' ('+om+').');
     if(z('mg')>0)parts.push(['Molas','Molas ('+nm+')',nm*z('mg')/1000,nm+' molas × '+fmt(z('mg'),0)+' g ÷ 1000']);
+    if(z('mh')>0&&z('mtt')>0){
+      const tira=Math.max(35+(z('mh')-10)*3,10),lar=z('mtw')>0?z('mtw'):10,ar=tira/100*lar/100;
+      parts.push(['Molas','TNT do ensacamento das molas',nm*ar*z('mtt')/1000,nm+' molas × ('+fmt(tira/100,3)+' m × '+fmt(lar/100,3)+' m) × '+fmt(z('mtt'),0)+' g/m² ÷ 1000']);
+      passos.push('TNT do ensacamento: cada mola pocket de '+fmt(z('mh'),1)+' cm usa uma tira de TNT de '+fmt(lar,1)+' cm de largura (o tamanho da cápsula) por '+fmt(tira,1)+' cm de comprimento ('+fmt(ar*10000,0)+' cm², '+fmt(ar*z('mtt'),2)+' g por mola), de TNT de '+fmt(z('mtt'),0)+' g/m². O comprimento vem da média das medidas de uso: mola de 10 cm usa 35 cm de TNT e mola de 15 cm usa 50 cm (mola mais alta pede mais TNT).');
+      if(z('mtc')>0){
+        const ab=livre>0?livre:areaLam;
+        parts.push(['Molas','TNT de cima e de baixo das molas',2*ab*z('mtc')/1000,'2 faces × '+fmt(ab,3)+' m² × '+fmt(z('mtc'),0)+' g/m² ÷ 1000']);
+        passos.push('TNT de cima e de baixo: as molas recebem uma camada de TNT de '+fmt(z('mtc'),0)+' g/m² em cada face para segurar as fileiras. São 2 faces × '+fmt(ab,3)+' m² (área do molejo) = '+fmt(2*ab,3)+' m² de TNT.');
+      }
+    }
   }
   if(z('gt')>0)parts.push(['Tampo','Tampo: tecido',area*z('gt')/1000,fmt(area,3)+' m² × '+fmt(z('gt'),0)+' g/m² ÷ 1000']);
   camadas('camTampo',area,'Tampo','Tampo: ',parts);
@@ -448,6 +464,7 @@ function calcM(){
   const tot=parts.reduce((t,p)=>t+p[2],0);
   if(!(tot>0)){$('resM').innerHTML='<span class="empty">Preencha lâminas, molas, tampo ou faixa.</span>'+aviso;return}
   passos.push('Peso de cada item: espumas e madeira = volume (m³) × densidade (kg/m³); tecidos e TNT = área (m²) × gramatura (g/m²) ÷ 1000; molas = quantidade × peso de cada mola (g) ÷ 1000. O peso total, '+fmt(tot)+' kg, é a soma de todos os componentes.');
+  passos.push('Observação: o colchão leva cola hot melt. Não se sabe a quantidade exata, então ela não entrou no peso total. Está citada aqui para constar que não foi esquecida.');
   const es=t=>String(t).replace(/</g,'&lt;');
   $('resM').innerHTML='Peso estimado: <b>'+fmt(tot)+' kg</b>'+aviso+
     '<div class="wrap"><table><tr><th>Grupo</th><th>Componente</th><th>Peso (kg)</th><th>%</th><th>Como foi calculado</th></tr>'+
