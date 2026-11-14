@@ -50,6 +50,22 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 .keys button{padding:14px 0;font:inherit;font-size:1.15rem;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;cursor:pointer}
 .keys button.op{background:var(--res);color:var(--acc);border-color:var(--res);font-weight:600}
 .keys button.eq{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
+#rel{display:none}
+@media print{
+  body{background:#fff;color:#000}
+  main{display:none}
+  #rel{display:block;font:11.5pt/1.5 system-ui,"Segoe UI",Arial,sans-serif;color:#000}
+  #rel h1{font-size:20pt;margin:0 0 2px}
+  #rel h2{font-size:13pt;margin:16px 0 6px;border-bottom:2px solid #2f6fed;padding-bottom:2px}
+  #rel p{margin:4px 0}
+  #rel .rm{color:#555;font-size:10pt}
+  #rel .rr{font-size:15pt;margin:10px 0}
+  #rel table{background:#fff;color:#000;font-size:10pt}
+  #rel th,#rel td{border:1px solid #999;color:#000;padding:4px 6px}
+  #rel th{background:#e8eef7}
+  #rel ol{padding-left:20px}#rel li{margin-bottom:5px}
+  .rit{page-break-after:always}.rit:last-of-type{page-break-after:auto}
+}
 </style>
 </head>
 <body>
@@ -116,7 +132,9 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 
 <!-- COLCHÃO -->
 <section class="panel" id="p4" role="tabpanel" hidden>
-  <h3 style="margin-top:0">Medidas do colchão</h3>
+  <label for="mn" style="margin-top:0">Nome do colchão</label>
+  <input id="mn" autocomplete="off" placeholder="ex.: Ortopédico D33 Casal">
+  <h3>Medidas do colchão</h3>
   <div class="row">
     <div><label for="mc">Comprimento (cm)</label><input id="mc" inputmode="decimal" placeholder="ex.: 188"></div>
     <div><label for="ml">Largura (cm)</label><input id="ml" inputmode="decimal" placeholder="ex.: 138"></div>
@@ -171,7 +189,7 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
     <div><label for="mo">Outros itens (kg): arame, cola, etiquetas...</label><input id="mo" inputmode="decimal"></div>
   </div>
   <div class="res" id="resM" aria-live="polite"></div>
-  <div class="btns"><button class="btn" id="addM" disabled>Adicionar à lista</button></div>
+  <div class="btns"><button class="btn" id="addM" disabled>Adicionar à lista</button><button class="btn sec" id="printM">Imprimir relatório</button></div>
 </section>
 
 <!-- CALCULADORA -->
@@ -189,9 +207,11 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
   <button class="btn" id="xlsx">Baixar Excel (.xlsx)</button>
   <button class="btn sec" id="csv">Baixar CSV</button>
   <button class="btn sec" id="txt">Baixar TXT</button>
+  <button class="btn sec" id="printL">Imprimir relatório</button>
   <button class="btn sec" id="limpar">Limpar lista</button>
 </div>
 </main>
+<div id="rel" aria-hidden="true"></div>
 
 <script>
 const $=id=>document.getElementById(id);
@@ -434,7 +454,8 @@ function calcM(){
     parts.map(p=>'<tr><td>'+p[0]+'</td><td>'+es(p[1])+'</td><td>'+fmt(p[2])+'</td><td>'+fmt(p[2]/tot*100,1)+'%</td><td>'+p[3]+'</td></tr>').join('')+'</table></div>'+
     '<p class="empty" style="font-size:.85rem;margin:8px 0 0">Estimativa: o peso real varia com o fornecedor e o processo. Compare com um colchão pesado na balança e ajuste os valores.</p>';
   const g={};parts.forEach(p=>{g[p[0]]=(g[p[0]]||0)+p[2]});
-  atual.M={tipo:'Colchão',entrada:fmt(c*100,1)+' x '+fmt(l*100,1)+(h>0?' x '+fmt(h*100,1):'')+' cm'+(nm>0?'; '+nm+' molas':''),
+  const nm0=$('mn').value.replace(/[<>&]/g,'').trim();
+  atual.M={tipo:'Colchão'+(nm0?': '+nm0:''),entrada:fmt(c*100,1)+' x '+fmt(l*100,1)+(h>0?' x '+fmt(h*100,1):'')+' cm'+(nm>0?'; '+nm+' molas':''),
     resultado:'peso estimado '+fmt(tot)+' kg ('+Object.entries(g).map(([k,v])=>k+' '+fmt(v)+' kg').join('; ')+')',origem:'',fab:'',passos,
     tabela:{cab:['Grupo','Componente','Peso (kg)','%','Como foi calculado'],w:[13,24,10,7,46],dec:[0,0,2,1,0],xs:[2,2,3,3,2],
       lin:parts.map(p=>[p[0],p[1],p[2],p[2]/tot*100,p[3]]).concat([['','TOTAL',tot,100,'Soma de todos os componentes']])}};
@@ -464,6 +485,26 @@ function desenha(){
     itens.map(i=>'<tr><td>'+i.tipo+'</td><td>'+i.entrada+'</td><td>'+i.resultado+'</td><td>'+(i.origem||'-')+'</td><td>'+(i.fab||'-')+'</td></tr>').join('')+'</table>';
 }
 $('limpar').onclick=()=>{itens=[];desenha()};
+
+// IMPRIMIR
+function imprimir(lista){
+  if(!lista.length){alert('Preencha o cálculo (ou adicione resultados à lista) antes de imprimir.');return}
+  const e=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  $('rel').innerHTML=lista.map(i=>{
+    const col=i.tipo.indexOf('Colchão')===0;
+    let h='<section class="rit"><h1>'+e(i.tipo)+'</h1><p class="rm">Relatório gerado em '+e(i.hora)+'</p>'+
+      '<p><b>Dados:</b> '+e(i.entrada)+'</p><p class="rr"><b>Resultado:</b> '+e(i.resultado)+'</p>';
+    if(i.origem||i.fab)h+='<p><b>Origem da amostra:</b> '+e(i.origem||'—')+' &nbsp; <b>Fabricação:</b> '+e(i.fab||'—')+'</p>';
+    if(i.tabela){const t=i.tabela;
+      h+='<h2>Peso de cada componente</h2><table><tr>'+t.cab.map(c=>'<th>'+e(c)+'</th>').join('')+'</tr>'+
+        t.lin.map(r=>'<tr>'+r.map((x,ci)=>'<td>'+e(typeof x==='number'?fmt(x,t.dec[ci]):x)+'</td>').join('')+'</tr>').join('')+'</table>';}
+    if(i.passos&&i.passos.length)h+='<h2>'+(col?'Por que deu esse peso':'Como foi calculado')+'</h2><ol>'+i.passos.map(p=>'<li>'+e(p)+'</li>').join('')+'</ol>';
+    return h+'</section>';
+  }).join('');
+  window.print();
+}
+$('printM').onclick=()=>imprimir(atual.M?[{...atual.M,hora:new Date().toLocaleString('pt-BR')}]:[]);
+$('printL').onclick=()=>imprimir(itens);
 
 // DOWNLOAD
 function baixar(nome,texto,tipo){

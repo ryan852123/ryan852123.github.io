@@ -5,74 +5,87 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ryan – Portfólio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#eef2f5; --surface:#ffffff; --ink:#14213d; --muted:#4a5875; --line:#c9d3de;
-  --ok:#1e8e5a; --tag:#f2c230; --tag-ink:#14213d;
+  --sky1:#bcd7f2; --sky2:#f3f8fd; --bld:#8aa6c4; --win:rgba(255,255,255,.8); --win2:rgba(255,205,110,.9);
+  --ink:#0d1a31; --muted:#3b4c68; --acc:#0a7ea4; --glow:rgba(10,126,164,.35);
+  --glass:rgba(255,255,255,.5); --line:rgba(13,26,49,.2); --btn:#0d1a31; --btn-ink:#ffffff;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){--bg:#0f1624; --surface:#18233a; --ink:#e8eef7; --muted:#9fb0cb; --line:#2c3a56; --ok:#4cc38a; color-scheme:dark}
+  :root:not([data-theme="light"]){--sky1:#050a17; --sky2:#13294d; --bld:#09122a; --win:rgba(92,225,255,.85); --win2:rgba(255,196,102,.9);
+    --ink:#e9f1fb; --muted:#a6b8d4; --acc:#5ce1ff; --glow:rgba(92,225,255,.4); --glass:rgba(16,30,58,.5); --line:rgba(130,190,255,.25);
+    --btn:#5ce1ff; --btn-ink:#06101f; color-scheme:dark}
 }
-:root[data-theme="dark"]{--bg:#0f1624; --surface:#18233a; --ink:#e8eef7; --muted:#9fb0cb; --line:#2c3a56; --ok:#4cc38a; color-scheme:dark}
+:root[data-theme="dark"]{--sky1:#050a17; --sky2:#13294d; --bld:#09122a; --win:rgba(92,225,255,.85); --win2:rgba(255,196,102,.9);
+  --ink:#e9f1fb; --muted:#a6b8d4; --acc:#5ce1ff; --glow:rgba(92,225,255,.4); --glass:rgba(16,30,58,.5); --line:rgba(130,190,255,.25);
+  --btn:#5ce1ff; --btn-ink:#06101f; color-scheme:dark}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55}
-main{max-width:880px;margin:0 auto;padding:40px 20px 56px}
-h1{font-size:clamp(3rem,14vw,5.5rem);line-height:.95;margin:0;font-weight:800;letter-spacing:-.03em}
-h2{font-size:1.5rem;margin:48px 0 14px;font-weight:600}
-p{max-width:62ch;margin:0 0 12px}
-.hero{display:flex;flex-wrap:wrap;align-items:flex-end;gap:18px 24px}
-.stamp{border:3px solid var(--ok);color:var(--ok);padding:6px 14px;border-radius:6px;font-weight:800;transform:rotate(-6deg);font-size:1.05rem}
-.role{color:var(--muted);font-size:1.15rem;margin:14px 0 0}
+body{margin:0;min-height:100vh;background:var(--sky2) linear-gradient(var(--sky1),var(--sky2)) fixed;color:var(--ink);font-family:"Chakra Petch",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55}
+#sky{position:fixed;left:0;bottom:0;width:100%;height:58vh;z-index:0;pointer-events:none}
+#sky .b{fill:var(--bld)}#sky .w{fill:var(--win)}#sky .w2{fill:var(--win2)}
+main{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:40px 18px 64px}
+h1{font-size:clamp(3.2rem,15vw,6rem);line-height:.95;margin:0;font-weight:700;letter-spacing:-.02em;color:var(--acc);text-shadow:0 0 28px var(--glow)}
+h2{font-size:1.25rem;margin:0 0 12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
+p{max-width:62ch;margin:0 0 12px}p:last-child{margin-bottom:0}
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:18px}
+.role{color:var(--muted);font-size:1.2rem;margin:14px 0 18px}
+.btn{display:inline-block;background:var(--btn);color:var(--btn-ink);text-decoration:none;font:inherit;font-weight:700;padding:10px 20px;border-radius:10px;box-shadow:0 0 18px var(--glow)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;list-style:none}
-.chips li{background:var(--surface);border:1px solid var(--line);padding:6px 14px;border-radius:999px;font-weight:600}
+.chips li{border:1px solid var(--acc);color:var(--ink);background:var(--glass);padding:5px 14px;border-radius:999px;font-weight:600}
 .edu{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.edu li{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--ok);border-radius:8px;padding:12px 16px}
+.edu li{border-left:4px solid var(--acc);padding:2px 0 2px 14px}
 .edu b{display:block}.edu span{color:var(--muted)}
-.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
-.card{position:relative;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:34px 16px 16px;cursor:pointer;display:block;width:100%}
-.card::before{content:"";position:absolute;top:12px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--bg);border:1px solid var(--line)}
-.card:hover{border-color:var(--ink)}
-.card:focus-visible,.btn:focus-visible,.close:focus-visible{outline:3px solid var(--tag);outline-offset:2px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));margin-top:14px}
+.card{position:relative;text-align:left;font:inherit;color:inherit;background:var(--glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:12px;padding:22px 16px 16px;cursor:pointer;display:block;width:100%;transition:box-shadow .2s,border-color .2s}
+.card::before{content:"";position:absolute;top:0;left:16px;width:34px;height:3px;background:var(--acc);box-shadow:0 0 10px var(--acc)}
+.card:hover{border-color:var(--acc);box-shadow:0 0 22px var(--glow)}
+.card:focus-visible,.btn:focus-visible,.close:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 .card b{display:block;font-size:1.1rem;overflow-wrap:anywhere}
-.tag{display:inline-block;margin-top:8px;background:var(--tag);color:var(--tag-ink);font-weight:600;font-size:.85rem;padding:2px 10px;border-radius:4px}
-dialog{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:24px;width:min(440px,calc(100% - 32px))}
-dialog::backdrop{background:rgba(10,16,30,.6)}
+.tag{display:inline-block;margin-top:8px;border:1px solid var(--acc);color:var(--acc);font-weight:600;font-size:.8rem;padding:1px 10px;border-radius:4px}
+dialog{border:1px solid var(--acc);border-radius:14px;background:var(--glass);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);color:var(--ink);padding:24px;width:min(440px,calc(100% - 32px));box-shadow:0 0 36px var(--glow)}
+dialog::backdrop{background:rgba(5,10,23,.55)}
 dialog h3{margin:0 0 6px;font-size:1.4rem;overflow-wrap:anywhere}
-.btn{display:inline-block;margin-top:10px;background:var(--ink);color:var(--bg);text-decoration:none;font-weight:600;padding:10px 18px;border-radius:8px}
-.close{float:right;background:none;border:0;color:var(--muted);font:inherit;font-size:1.6rem;line-height:1;cursor:pointer}
-footer{margin-top:56px;color:var(--muted)}
-footer a{color:var(--ink);font-weight:600}
+.close{float:right;background:none;border:0;color:var(--muted);font:inherit;font-size:1.7rem;line-height:1;cursor:pointer}
+footer{margin-top:28px;color:var(--muted)}
+footer a{color:var(--acc);font-weight:700}
 </style>
 </head>
 <body>
+<svg id="sky" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
 <main>
-  <div class="hero">
-    <h1>Ryan</h1>
-    <span class="stamp">Aprovado</span>
-  </div>
+  <h1>Ryan</h1>
   <p class="role">Inspetor da qualidade e programador</p>
+  <a class="btn" href="calculadora.html">Abrir a calculadora</a>
 
-  <h2>Sobre mim</h2>
-  <p>Trabalho como inspetor da qualidade na Rodrigues Colchões, onde confiro se cada produto sai dentro do padrão. Esse olhar para os detalhes eu levo para a programação: gosto de código que funciona e que dá para entender.</p>
-  <p>Sou técnico em eletrotécnica, tenho conhecimento em comandos elétricos e relatórios, e curso Análise e Desenvolvimento de Sistemas online. Crio projetos em C#, HTML e CSS. Abaixo estão alguns deles.</p>
+  <section class="glass">
+    <h2>Sobre mim</h2>
+    <p>Trabalho como inspetor da qualidade na Rodrigues Colchões, onde confiro se cada produto sai dentro do padrão. Esse olhar para os detalhes eu levo para a programação: gosto de código que funciona e que dá para entender.</p>
+    <p>Sou técnico em eletrotécnica, tenho conhecimento em comandos elétricos e relatórios, e curso Análise e Desenvolvimento de Sistemas online. Crio projetos em C#, HTML e CSS.</p>
+  </section>
 
-  <h2>Conhecimentos</h2>
-  <ul class="chips"><li>C#</li><li>HTML</li><li>CSS</li><li>Comandos elétricos</li><li>Relatórios</li><li>Controle de qualidade</li></ul>
+  <section class="glass">
+    <h2>Conhecimentos</h2>
+    <ul class="chips"><li>C#</li><li>HTML</li><li>CSS</li><li>Comandos elétricos</li><li>Relatórios</li><li>Controle de qualidade</li></ul>
+  </section>
 
-  <h2>Formação</h2>
-  <ul class="edu">
-    <li><b>Técnico em Eletrotécnica</b><span>Concluído</span></li>
-    <li><b>Análise e Desenvolvimento de Sistemas (ADS)</b><span>Cursando, online</span></li>
-    <li><b>Ciência da Computação</b><span>3 períodos cursados, trancado</span></li>
-  </ul>
+  <section class="glass">
+    <h2>Formação</h2>
+    <ul class="edu">
+      <li><b>Técnico em Eletrotécnica</b><span>Concluído</span></li>
+      <li><b>Análise e Desenvolvimento de Sistemas (ADS)</b><span>Cursando, online</span></li>
+      <li><b>Ciência da Computação</b><span>3 períodos cursados, trancado</span></li>
+    </ul>
+  </section>
 
-  <h2>Projetos</h2>
-  <p>Toque em um cartão para ver os detalhes e abrir o projeto.</p>
-  <div class="grid" id="grid"></div>
+  <section class="glass">
+    <h2>Projetos</h2>
+    <p>Toque em um cartão para ver os detalhes e abrir o projeto.</p>
+    <div class="grid" id="grid"></div>
+  </section>
 
   <footer>Veja todos os meus repositórios no <a href="https://github.com/ryan852123" target="_blank" rel="noopener">GitHub</a>.</footer>
 </main>
@@ -82,12 +95,25 @@ footer a{color:var(--ink);font-weight:600}
   <h3 id="dt"></h3>
   <span class="tag" id="dtag"></span>
   <p id="dd" style="margin-top:14px"></p>
-  <a class="btn" id="dl" rel="noopener">Abrir no GitHub</a>
+  <a class="btn" id="dl" rel="noopener" style="margin-top:6px">Abrir no GitHub</a>
 </dialog>
 
 <script>
+(function(){
+  var s=document.getElementById("sky"),W=1200,H=400,x=0,r=7,h="";
+  function R(){r=(r*9301+49297)%233280;return r/233280}
+  while(x<W){
+    var w=40+(R()*70|0),bh=90+(R()*260|0);
+    h+='<rect class="b" x="'+x+'" y="'+(H-bh)+'" width="'+w+'" height="'+bh+'"/>';
+    if(R()>.6)h+='<rect class="b" x="'+(x+w/2-2)+'" y="'+(H-bh-30)+'" width="4" height="30"/>';
+    for(var yy=H-bh+12;yy<H-8;yy+=16)for(var xx=x+8;xx<x+w-10;xx+=14)
+      if(R()>.72)h+='<rect class="'+(R()>.8?'w2':'w')+'" x="'+xx+'" y="'+yy+'" width="5" height="7"/>';
+    x+=w+(R()*10|0);
+  }
+  s.innerHTML=h;
+})();
 var P=[
- ["Calculadora","App","Calculadora de triângulo, espuma e básica. Abre direto aqui no site.","calculadora.html","Abrir a calculadora"],
+ ["Calculadora","App","Calculadora de triângulo, espuma, colchão e básica, com relatório para imprimir. Abre direto aqui no site.","calculadora.html","Abrir a calculadora"],
  ["ni3-app","Aplicativo","Aplicativo publicado no GitHub."],
  ["NI03","Projeto","Projeto publicado no GitHub."],
  ["França","Projeto","Projeto publicado no GitHub."],
@@ -110,7 +136,10 @@ P.forEach(function(p){
     document.getElementById("dt").textContent=p[0];
     document.getElementById("dtag").textContent=p[1];
     document.getElementById("dd").textContent=p[2];
-    var a=document.getElementById("dl");a.target=p[3]?"_self":"_blank";a.href=p[3]||"https://github.com/ryan852123/"+encodeURIComponent(p[0]);a.textContent=p[4]||"Abrir no GitHub";
+    var a=document.getElementById("dl");
+    a.target=p[3]?"_self":"_blank";
+    a.href=p[3]||"https://github.com/ryan852123/"+encodeURIComponent(p[0]);
+    a.textContent=p[4]||"Abrir no GitHub";
     d.showModal();
   };
   g.appendChild(b);
@@ -120,4 +149,3 @@ d.addEventListener("click",function(e){if(e.target===d)d.close()});
 </script>
 </body>
 </html>
-
