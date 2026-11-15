@@ -276,7 +276,7 @@ async function iniciaFirebase(){
   DB={fs:fs,doc:F.doc,setDoc:F.setDoc,getDoc:F.getDoc,Bytes:F.Bytes};
   $("bLogin").onclick=function(){
     if(auth.currentUser)Au.signOut(auth);
-    else Au.signInWithPopup(auth,new Au.GoogleAuthProvider()).catch(function(){aviso("Não foi possível entrar.")})};
+    else Au.signInWithPopup(auth,new Au.GoogleAuthProvider()).catch(function(e){aviso("Não foi possível entrar ("+(e.code||e.message)+").")})};
   Au.onAuthStateChanged(auth,async function(u){
     if(unsub){unsub();unsub=null}
     M=[];canEdit=false;mode="ver";sel=null;D=null;base=null;lista();ui();draw();
