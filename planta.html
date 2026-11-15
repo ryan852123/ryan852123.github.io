@@ -35,6 +35,7 @@ select,input{background:var(--bg);border:1px solid var(--line);border-radius:8px
   <button id="bEdit" hidden>Editar</button>
   <button id="bAdd" hidden>+ Máquina</button>
   <button id="bOpen">Abrir arquivo</button>
+  <button id="bSend" hidden>Enviar planta</button>
   <button id="bDxf">Exportar DXF</button>
   <button id="bJson">Backup JSON</button>
 </header>
@@ -47,27 +48,30 @@ select,input{background:var(--bg);border:1px solid var(--line);border-radius:8px
 <input type="file" id="fil" accept=".dxf,.bin,.json" hidden>
 
 <script>
-// Para ativar o login Google + Firestore, cole aqui a configuração do seu projeto Firebase:
-// var FIREBASE={apiKey:"...",authDomain:"...",projectId:"...",appId:"..."};
-var FIREBASE=null;
+// Configuração do Firebase (pública por natureza; a segurança está nas regras do Firestore). Use null para o modo local.
+var FIREBASE={apiKey:"AIzaSyDhep4vqCM__2NGqiQKsa9ju4LEPJ9v_kQ",authDomain:"mecanica-e41e7.firebaseapp.com",projectId:"mecanica-e41e7",storageBucket:"mecanica-e41e7.firebasestorage.app",messagingSenderId:"1025308484975",appId:"1:1025308484975:web:6dcc3285c40496ba31f49a"};
 
 // PURE-START
 function colorDe(n){var m=/([0-9A-Fa-f]{6})$/.exec(n||"");return m?"#"+m[1]:"#222222"}
 function parseDXF(t,mk){
-  var P={},T=[],b=[1e18,1e18,-1e18,-1e18],pos=0,n=t.length,inE=false,o=null;
+  var P={},T=[],Rw={},b=[1e18,1e18,-1e18,-1e18],pos=0,n=t.length,inE=false,o=null;
+  function raw(c,a){var r=Rw[c]||(Rw[c]={lens:[],pts:[]});r.lens.push(a.length/2);for(var i=0;i<a.length;i++)r.pts.push(Math.round(a[i]*100))}
   function ln(){var e=t.indexOf("\n",pos);if(e<0)e=n;var s=t.slice(pos,e);pos=e+1;return s.trim()}
   function pt(x,y){if(x<b[0])b[0]=x;if(y<b[1])b[1]=y;if(x>b[2])b[2]=x;if(y>b[3])b[3]=y}
   function flush(){
     if(!o)return;var ty=o.t,p,i;
     if(ty==="TEXT"||ty==="MTEXT"){if(o[1]!=null)T.push([+o[10],+o[20],+o[40]||1,+o[50]||0,o[1].replace(/\\P/g," ")]);return}
     var c=colorDe(o[8]);p=P[c]||(P[c]=mk());
-    if(ty==="LINE"){p.moveTo(+o[10],+o[20]);p.lineTo(+o[11],+o[21]);pt(+o[10],+o[20]);pt(+o[11],+o[21])}
+    if(ty==="LINE"){p.moveTo(+o[10],+o[20]);p.lineTo(+o[11],+o[21]);pt(+o[10],+o[20]);pt(+o[11],+o[21]);raw(c,[+o[10],+o[20],+o[11],+o[21]])}
     else if(ty==="LWPOLYLINE"&&o.X.length>1){
       for(i=0;i<o.X.length;i++){i?p.lineTo(o.X[i],o.Y[i]):p.moveTo(o.X[i],o.Y[i]);pt(o.X[i],o.Y[i])}
-      if((+o[70]||0)&1)p.closePath()}
+      var A=[];for(i=0;i<o.X.length;i++)A.push(o.X[i],o.Y[i]);
+      if((+o[70]||0)&1){p.closePath();A.push(o.X[0],o.Y[0])}
+      raw(c,A)}
     else if(ty==="CIRCLE"||ty==="ARC"){
       var x=+o[10],y=+o[20],r=+o[40],a=ty==="ARC"?(+o[50])*Math.PI/180:0,e=ty==="ARC"?(+o[51])*Math.PI/180:Math.PI*2;
-      p.moveTo(x+r*Math.cos(a),y+r*Math.sin(a));p.arc(x,y,r,a,e);pt(x-r,y-r);pt(x+r,y+r)}
+      p.moveTo(x+r*Math.cos(a),y+r*Math.sin(a));p.arc(x,y,r,a,e);pt(x-r,y-r);pt(x+r,y+r);
+      if(e<=a)e+=Math.PI*2;var A=[],q;for(q=0;q<=36;q++)A.push(x+r*Math.cos(a+(e-a)*q/36),y+r*Math.sin(a+(e-a)*q/36));raw(c,A)}
   }
   while(pos<n){
     var k=ln(),v=ln();
@@ -76,7 +80,7 @@ function parseDXF(t,mk){
     else if(o){if(k==="10")o.X.push(+v);else if(k==="20")o.Y.push(+v);if(o[k]==null)o[k]=v}
   }
   flush();
-  return {paths:P,texts:T,b:b};
+  return {paths:P,texts:T,b:b,raw:Rw};
 }
 function parseBIN(buf,mk){
   var dv=new DataView(buf),hl=dv.getUint32(0,true),h=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,hl))),o=4+hl,P={},q=h.q;
@@ -85,7 +89,16 @@ function parseBIN(buf,mk){
     var p=mk(),k=0,i,j;
     for(i=0;i<g.n;i++)for(j=0;j<lens[i];j++,k+=2){var x=pts[k]/q,y=pts[k+1]/q;j?p.lineTo(x,y):p.moveTo(x,y)}
     P[g.c]=p});
-  return {paths:P,texts:h.texts,b:h.bounds};
+  return {paths:P,texts:h.texts,b:h.bounds,buf:buf};
+}
+function toBIN(d){
+  var cs=Object.keys(d.raw),hb=new TextEncoder().encode(JSON.stringify({q:100,bounds:d.b,texts:d.texts,groups:cs.map(function(c){return {c:c,n:d.raw[c].lens.length,p:d.raw[c].pts.length/2}})})),
+      hl=Math.ceil(hb.length/4)*4,tot=4+hl;
+  cs.forEach(function(c){tot+=4*d.raw[c].lens.length+4*d.raw[c].pts.length});
+  var buf=new ArrayBuffer(tot),o=4+hl;new DataView(buf).setUint32(0,hl,true);
+  new Uint8Array(buf,4,hb.length).set(hb);new Uint8Array(buf,4+hb.length,hl-hb.length).fill(32);
+  cs.forEach(function(c){var r=d.raw[c];new Uint32Array(buf,o,r.lens.length).set(r.lens);o+=4*r.lens.length;new Int32Array(buf,o,r.pts.length).set(r.pts);o+=4*r.pts.length});
+  return buf;
 }
 // PURE-END
 
@@ -142,7 +155,7 @@ function hit(x,y){
 function editando(){return canEdit&&mode==="editar"}
 function ui(){
   $("bLogin").hidden=!FIREBASE;$("bEdit").hidden=!canEdit;$("bEdit").textContent=mode==="editar"?"Concluir":"Editar";
-  $("bAdd").hidden=!editando();$("bAdd").classList.toggle("on",addMode);
+  $("bAdd").hidden=!editando();$("bSend").hidden=!(FIREBASE&&canEdit);$("bAdd").classList.toggle("on",addMode);
   $("sel").hidden=!sel;
   if(sel){$("nome").value=sel.nome;$("nome").readOnly=!editando();$("bDel").hidden=!editando()}
 }
@@ -231,18 +244,42 @@ $("fil").onchange=async function(){
   }catch(err){aviso("Não consegui ler esse arquivo.")}
 };
 
+// planta guardada no Firestore (protegida pelas regras de acesso)
+async function enviar(){
+  if(!D||!DB||!canEdit){aviso("Abra primeiro o arquivo da planta (.dxf) e entre como editor.");return}
+  if(!confirm("Guardar esta planta no servidor? Ela substitui a anterior."))return;
+  aviso("Enviando a planta…");
+  try{
+    var u=new Uint8Array(D.buf||toBIN(D)),C=700000,n=Math.ceil(u.length/C),i;
+    for(i=0;i<n;i++)await DB.setDoc(DB.doc(DB.fs,"planta","desenho_"+i),{b:DB.Bytes.fromUint8Array(u.slice(i*C,(i+1)*C))});
+    await DB.setDoc(DB.doc(DB.fs,"planta","desenho"),{n:n,em:Date.now()});
+    aviso("Planta guardada ("+n+" partes).");setTimeout(function(){aviso("")},3000)
+  }catch(e){aviso("Não consegui enviar. Confira se o seu e-mail está em editores.")}
+}
+$("bSend").onclick=enviar;
+async function carregaDesenho(){
+  aviso("Carregando a planta…");
+  var m=await DB.getDoc(DB.doc(DB.fs,"planta","desenho"));
+  if(!m.exists()){aviso(canEdit?"Nenhuma planta guardada ainda. Use Abrir arquivo e depois Enviar planta.":"A planta ainda não foi enviada.");return}
+  var n=m.data().n,ps=await Promise.all(Array.from({length:n},function(_,i){return DB.getDoc(DB.doc(DB.fs,"planta","desenho_"+i))})),
+      parts=ps.map(function(p){return p.data().b.toUint8Array()}),tot=0,o=0;
+  parts.forEach(function(p){tot+=p.length});
+  var all=new Uint8Array(tot);parts.forEach(function(p){all.set(p,o);o+=p.length});
+  usar(parseBIN(all.buffer,mk));
+}
+
 // Firebase (login Google + Firestore)
 async function iniciaFirebase(){
   var B="https://www.gstatic.com/firebasejs/10.12.2/",
       A=await import(B+"firebase-app.js"),Au=await import(B+"firebase-auth.js"),F=await import(B+"firebase-firestore.js"),
       app=A.initializeApp(FIREBASE),auth=Au.getAuth(app),fs=F.getFirestore(app),unsub=null;
-  DB={fs:fs,doc:F.doc,setDoc:F.setDoc};
+  DB={fs:fs,doc:F.doc,setDoc:F.setDoc,getDoc:F.getDoc,Bytes:F.Bytes};
   $("bLogin").onclick=function(){
     if(auth.currentUser)Au.signOut(auth);
     else Au.signInWithPopup(auth,new Au.GoogleAuthProvider()).catch(function(){aviso("Não foi possível entrar.")})};
   Au.onAuthStateChanged(auth,async function(u){
     if(unsub){unsub();unsub=null}
-    M=[];canEdit=false;mode="ver";sel=null;lista();ui();draw();
+    M=[];canEdit=false;mode="ver";sel=null;D=null;base=null;lista();ui();draw();
     logado=!!u;$("bLogin").textContent=u?"Sair":"Entrar com Google";
     if(!u){aviso("Entre com o Google para ver as máquinas.");return}
     var mail=(u.email||"").toLowerCase();
@@ -250,6 +287,7 @@ async function iniciaFirebase(){
       canEdit=(a.data().editores||[]).map(function(x){return x.toLowerCase()}).indexOf(mail)>-1}
     catch(e){aviso("Sem acesso. Peça ao dono para liberar o e-mail "+mail+".");return}
     aviso("");
+    carregaDesenho().catch(function(){aviso("Não consegui carregar a planta.")});
     unsub=F.onSnapshot(F.doc(fs,"planta","maquinas"),function(s){
       if(s.metadata.hasPendingWrites||drag)return;
       M=s.exists()?(s.data().lista||[]):[];lista();draw()},
@@ -263,10 +301,12 @@ size();
 if(FIREBASE){iniciaFirebase().catch(function(){aviso("Erro ao iniciar o login.")});aviso("Entre com o Google para ver as máquinas.")}
 else{try{M=JSON.parse(localStorage.getItem("planta_maquinas")||"[]")}catch(e){M=[]}lista()}
 ui();
-aviso("Carregando a planta…");
-fetch("planta.bin").then(function(r){if(!r.ok)throw 0;return r.arrayBuffer()})
-  .then(function(b){usar(parseBIN(b,mk));if(FIREBASE&&!logado)aviso("Entre com o Google para ver as máquinas.")})
-  .catch(function(){aviso("Toque em Abrir arquivo e escolha a planta (.dxf).")});
+if(!FIREBASE){
+  aviso("Carregando a planta…");
+  fetch("planta.bin").then(function(r){if(!r.ok)throw 0;return r.arrayBuffer()})
+    .then(function(b){usar(parseBIN(b,mk))})
+    .catch(function(){aviso("Toque em Abrir arquivo e escolha a planta (.dxf).")});
+}
 </script>
 </body>
 </html>
