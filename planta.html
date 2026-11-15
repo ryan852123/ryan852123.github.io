@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Planta da fábrica</title>
+<style>
+:root{--bg:#eef2f5;--bar:#ffffff;--ink:#0d1a31;--muted:#3b4c68;--acc:#0a7ea4;--line:#c9d3de;--btn:#0d1a31;--btn-ink:#fff;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1624;--bar:#18233a;--ink:#e9f1fb;--muted:#a6b8d4;--acc:#5ce1ff;--line:#2c3a56;--btn:#5ce1ff;--btn-ink:#06101f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1624;--bar:#18233a;--ink:#e9f1fb;--muted:#a6b8d4;--acc:#5ce1ff;--line:#2c3a56;--btn:#5ce1ff;--btn-ink:#06101f;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#bar{display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--bar);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap;flex:none}
+#bar a{color:var(--acc);font-weight:700;text-decoration:none}
+button,select,input{font:inherit;color:var(--ink)}
+button{background:var(--btn);color:var(--btn-ink);border:0;border-radius:8px;padding:8px 12px;font-weight:600;cursor:pointer;flex:none}
+button.on{outline:3px solid var(--acc)}
+select,input{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 8px;min-width:0}
+#stage{position:relative;flex:1;min-height:0}
+#cv{position:absolute;inset:0;touch-action:none;display:block}
+#msg{position:absolute;left:10px;right:10px;top:10px;background:var(--bar);border:1px solid var(--acc);border-radius:10px;padding:10px 12px;display:none}
+#sel{display:flex;gap:8px;padding:10px;background:var(--bar);border-top:1px solid var(--line);flex:none}
+#sel input{flex:1}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+</style>
+</head>
+<body>
+<header id="bar">
+  <a href="index.html" aria-label="Voltar">←</a>
+  <select id="lista" aria-label="Buscar máquina"><option value="">Buscar máquina…</option></select>
+  <button id="bLogin" hidden>Entrar com Google</button>
+  <button id="bEdit" hidden>Editar</button>
+  <button id="bAdd" hidden>+ Máquina</button>
+  <button id="bOpen">Abrir arquivo</button>
+  <button id="bDxf">Exportar DXF</button>
+  <button id="bJson">Backup JSON</button>
+</header>
+<div id="stage"><canvas id="cv"></canvas><div id="msg" role="status"></div></div>
+<div id="sel" hidden>
+  <input id="nome" placeholder="Nome da máquina" aria-label="Nome da máquina">
+  <button id="bDel">Excluir</button>
+  <button id="bOk">Fechar</button>
+</div>
+<input type="file" id="fil" accept=".dxf,.bin,.json" hidden>
+
+<script>
+// Para ativar o login Google + Firestore, cole aqui a configuração do seu projeto Firebase:
+// var FIREBASE={apiKey:"...",authDomain:"...",projectId:"...",appId:"..."};
+var FIREBASE=null;
+
+// PURE-START
+function colorDe(n){var m=/([0-9A-Fa-f]{6})$/.exec(n||"");return m?"#"+m[1]:"#222222"}
+function parseDXF(t,mk){
+  var P={},T=[],b=[1e18,1e18,-1e18,-1e18],pos=0,n=t.length,inE=false,o=null;
+  function ln(){var e=t.indexOf("\n",pos);if(e<0)e=n;var s=t.slice(pos,e);pos=e+1;return s.trim()}
+  function pt(x,y){if(x<b[0])b[0]=x;if(y<b[1])b[1]=y;if(x>b[2])b[2]=x;if(y>b[3])b[3]=y}
+  function flush(){
+    if(!o)return;var ty=o.t,p,i;
+    if(ty==="TEXT"||ty==="MTEXT"){if(o[1]!=null)T.push([+o[10],+o[20],+o[40]||1,+o[50]||0,o[1].replace(/\\P/g," ")]);return}
+    var c=colorDe(o[8]);p=P[c]||(P[c]=mk());
+    if(ty==="LINE"){p.moveTo(+o[10],+o[20]);p.lineTo(+o[11],+o[21]);pt(+o[10],+o[20]);pt(+o[11],+o[21])}
+    else if(ty==="LWPOLYLINE"&&o.X.length>1){
+      for(i=0;i<o.X.length;i++){i?p.lineTo(o.X[i],o.Y[i]):p.moveTo(o.X[i],o.Y[i]);pt(o.X[i],o.Y[i])}
+      if((+o[70]||0)&1)p.closePath()}
+    else if(ty==="CIRCLE"||ty==="ARC"){
+      var x=+o[10],y=+o[20],r=+o[40],a=ty==="ARC"?(+o[50])*Math.PI/180:0,e=ty==="ARC"?(+o[51])*Math.PI/180:Math.PI*2;
+      p.moveTo(x+r*Math.cos(a),y+r*Math.sin(a));p.arc(x,y,r,a,e);pt(x-r,y-r);pt(x+r,y+r)}
+  }
+  while(pos<n){
+    var k=ln(),v=ln();
+    if(k==="0"){flush();o=null;if(v==="ENDSEC"&&inE)break;if(inE)o={t:v,X:[],Y:[]}}
+    else if(k==="2"&&v==="ENTITIES")inE=true;
+    else if(o){if(k==="10")o.X.push(+v);else if(k==="20")o.Y.push(+v);if(o[k]==null)o[k]=v}
+  }
+  flush();
+  return {paths:P,texts:T,b:b};
+}
+function parseBIN(buf,mk){
+  var dv=new DataView(buf),hl=dv.getUint32(0,true),h=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,hl))),o=4+hl,P={},q=h.q;
+  h.groups.forEach(function(g){
+    var lens=new Uint32Array(buf,o,g.n);o+=4*g.n;var pts=new Int32Array(buf,o,g.p*2);o+=8*g.p;
+    var p=mk(),k=0,i,j;
+    for(i=0;i<g.n;i++)for(j=0;j<lens[i];j++,k+=2){var x=pts[k]/q,y=pts[k+1]/q;j?p.lineTo(x,y):p.moveTo(x,y)}
+    P[g.c]=p});
+  return {paths:P,texts:h.texts,b:h.bounds};
+}
+// PURE-END
+
+var $=function(i){return document.getElementById(i)};
+var cv=$("cv"),cx=cv.getContext("2d"),W=0,H=0,DPR=1,D=null,V={s:1,x:0,y:0},base=null,fit=1,tm,st,
+    M=[],sel=null,mode="ver",addMode=false,canEdit=true,DB=null,logado=false,hov=null,drag=null,pts={},g0=null;
+function mk(){return new Path2D()}
+function aviso(t){var m=$("msg");m.textContent=t||"";m.style.display=t?"block":"none"}
+function w2s(x,y){return [V.s*x+V.x,V.y-V.s*y]}
+function s2w(x,y){return [(x-V.x)/V.s,(V.y-y)/V.s]}
+
+function size(){
+  var r=cv.parentNode.getBoundingClientRect();DPR=window.devicePixelRatio||1;W=r.width;H=r.height;
+  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cv.style.width=W+"px";cv.style.height=H+"px";
+}
+function fitView(){
+  var b=D.b,bw=b[2]-b[0],bh=b[3]-b[1];V.s=fit=Math.min(W/bw,H/bh)*0.95;
+  V.x=W/2-V.s*(b[0]+b[2])/2;V.y=H/2+V.s*(b[1]+b[3])/2;
+}
+function renderBase(){
+  if(!D)return;
+  var c=document.createElement("canvas");c.width=cv.width;c.height=cv.height;
+  var g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);
+  g.setTransform(DPR*V.s,0,0,-DPR*V.s,DPR*V.x,DPR*V.y);g.lineWidth=1/V.s;
+  for(var col in D.paths){g.strokeStyle=col;g.stroke(D.paths[col])}
+  g.fillStyle="#111";
+  D.texts.forEach(function(t){
+    if(t[2]*V.s<3)return;
+    g.save();g.translate(t[0],t[1]);g.rotate(t[3]*Math.PI/180);g.scale(1,-1);g.font=t[2]+"px sans-serif";g.fillText(t[4],0,0);g.restore()});
+  base={c:c,s:V.s,x:V.x,y:V.y};draw();
+}
+function later(){clearTimeout(tm);tm=setTimeout(renderBase,160)}
+function draw(){
+  cx.setTransform(1,0,0,1,0,0);cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);
+  if(base){var k=V.s/base.s;cx.setTransform(k,0,0,k,DPR*(V.x-k*base.x),DPR*(V.y-k*base.y));cx.drawImage(base.c,0,0)}
+  cx.setTransform(DPR,0,0,DPR,0,0);cx.font="600 13px system-ui,sans-serif";cx.textBaseline="middle";
+  M.forEach(function(m){
+    var p=w2s(m.x,m.y),on=m===sel;
+    cx.beginPath();cx.arc(p[0],p[1],on?10:7,0,7);cx.fillStyle=on?"#e4572e":"#0a7ea4";cx.fill();
+    cx.lineWidth=2;cx.strokeStyle="#fff";cx.stroke();
+    var near=hov&&Math.hypot(hov[0]-p[0],hov[1]-p[1])<40;
+    if(on||near||V.s>fit*3){
+      var tw=cx.measureText(m.nome).width+14,bx=p[0]-tw/2,by=p[1]-34;
+      cx.fillStyle="rgba(13,26,49,.92)";cx.beginPath();cx.roundRect?cx.roundRect(bx,by,tw,22,6):cx.rect(bx,by,tw,22);cx.fill();
+      cx.fillStyle="#fff";cx.textAlign="center";cx.fillText(m.nome,p[0],by+11);cx.textAlign="left"}
+  });
+}
+function usar(d){D=d;base=null;fitView();renderBase();aviso("")}
+
+// máquinas
+function hit(x,y){
+  for(var i=M.length-1;i>=0;i--){var p=w2s(M[i].x,M[i].y);if(Math.hypot(p[0]-x,p[1]-y)<20)return M[i]}
+  return null}
+function editando(){return canEdit&&mode==="editar"}
+function ui(){
+  $("bLogin").hidden=!FIREBASE;$("bEdit").hidden=!canEdit;$("bEdit").textContent=mode==="editar"?"Concluir":"Editar";
+  $("bAdd").hidden=!editando();$("bAdd").classList.toggle("on",addMode);
+  $("sel").hidden=!sel;
+  if(sel){$("nome").value=sel.nome;$("nome").readOnly=!editando();$("bDel").hidden=!editando()}
+}
+function lista(){
+  var s=$("lista");s.innerHTML="<option value=''>Buscar máquina…</option>";
+  M.slice().sort(function(a,b){return a.nome.localeCompare(b.nome)}).forEach(function(m){
+    var o=document.createElement("option");o.value=m.id;o.textContent=m.nome;s.appendChild(o)});
+}
+function save(){
+  if(DB){clearTimeout(st);st=setTimeout(function(){
+    DB.setDoc(DB.doc(DB.fs,"planta","maquinas"),{lista:M,em:Date.now()}).catch(function(){aviso("Sem permissão para salvar.")})},400)}
+  else try{localStorage.setItem("planta_maquinas",JSON.stringify(M))}catch(e){}
+}
+function escolher(m){sel=m;ui();draw()}
+
+// gestos
+function pos(e){var r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]}
+function zoomEm(x,y,f){
+  var w=s2w(x,y),ns=Math.min(Math.max(V.s*f,fit*0.5),fit*400);V.s=ns;V.x=x-ns*w[0];V.y=y+ns*w[1]}
+cv.addEventListener("pointerdown",function(e){
+  cv.setPointerCapture(e.pointerId);var p=pos(e);pts[e.pointerId]={x:p[0],y:p[1],x0:p[0],y0:p[1],mv:false};
+  var ids=Object.keys(pts);
+  if(ids.length===1){var h=editando()?hit(p[0],p[1]):null;drag=h||null;if(drag)sel=drag}
+  else{drag=null;var a=pts[ids[0]],b=pts[ids[1]];g0={d:Math.hypot(a.x-b.x,a.y-b.y),s:V.s,x:V.x,y:V.y,mx:(a.x+b.x)/2,my:(a.y+b.y)/2}}
+});
+cv.addEventListener("pointermove",function(e){
+  var p=pos(e);hov=p;var o=pts[e.pointerId],ids=Object.keys(pts);
+  if(!o){draw();return}
+  var dx=p[0]-o.x,dy=p[1]-o.y;o.x=p[0];o.y=p[1];if(Math.hypot(p[0]-o.x0,p[1]-o.y0)>6)o.mv=true;
+  if(ids.length===1){
+    if(drag&&o.mv){var w=s2w(p[0],p[1]);drag.x=Math.round(w[0]*100)/100;drag.y=Math.round(w[1]*100)/100}
+    else if(!drag){V.x+=dx;V.y+=dy;later()}
+  }else if(ids.length===2&&g0){
+    var a=pts[ids[0]],b=pts[ids[1]],d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+    V.s=g0.s;V.x=g0.x;V.y=g0.y;zoomEm(g0.mx,g0.my,d/g0.d);V.x+=mx-g0.mx;V.y+=my-g0.my;later()}
+  draw();
+});
+function fim(e){
+  var o=pts[e.pointerId];if(!o)return;delete pts[e.pointerId];g0=null;
+  if(Object.keys(pts).length)return;
+  if(drag&&o.mv){save();lista()}
+  else if(!o.mv){
+    var h=hit(o.x,o.y);
+    if(h)escolher(h);
+    else if(addMode&&editando()){
+      var n=prompt("Nome da máquina?");
+      if(n&&n.trim()){var w=s2w(o.x,o.y),m={id:Date.now().toString(36),nome:n.trim(),x:Math.round(w[0]*100)/100,y:Math.round(w[1]*100)/100};
+        M.push(m);addMode=false;save();lista();escolher(m)}}
+    else if(sel){sel=null;ui();draw()}
+  }
+  drag=null;ui();draw();
+}
+cv.addEventListener("pointerup",fim);cv.addEventListener("pointercancel",fim);
+cv.addEventListener("pointerleave",function(e){if(e.pointerType==="mouse"){hov=null;draw()}});
+cv.addEventListener("wheel",function(e){e.preventDefault();var p=pos(e);zoomEm(p[0],p[1],Math.exp(-e.deltaY*0.0015));draw();later()},{passive:false});
+window.addEventListener("resize",function(){size();if(D){base=null;fitView();renderBase()}});
+
+// botões
+$("lista").onchange=function(){
+  var m=M.filter(function(x){return x.id===this.value},this)[0];if(!m)return;
+  V.s=Math.max(V.s,fit*4);V.x=W/2-V.s*m.x;V.y=H/2+V.s*m.y;escolher(m);renderBase()};
+$("bEdit").onclick=function(){mode=mode==="editar"?"ver":"editar";addMode=false;ui();draw()};
+$("bAdd").onclick=function(){addMode=!addMode;ui();aviso(addMode?"Toque no ponto da planta onde fica a máquina.":"")};
+$("bOk").onclick=function(){sel=null;ui();draw()};
+$("bDel").onclick=function(){if(sel&&confirm("Excluir "+sel.nome+"?")){M=M.filter(function(m){return m!==sel});sel=null;save();lista();ui();draw()}};
+$("nome").oninput=function(){if(sel&&editando()){sel.nome=this.value;save();draw()}};
+$("nome").onchange=lista;
+$("bOpen").onclick=function(){$("fil").click()};
+function baixar(nome,txt,tipo){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:tipo}));a.download=nome;a.click()}
+$("bJson").onclick=function(){baixar("maquinas.json",JSON.stringify(M,null,1),"application/json")};
+$("bDxf").onclick=function(){
+  var s="0\nSECTION\n2\nENTITIES\n";
+  M.forEach(function(m){s+="0\nCIRCLE\n8\nMAQUINAS\n10\n"+m.x+"\n20\n"+m.y+"\n30\n0\n40\n2\n0\nTEXT\n8\nMAQUINAS\n10\n"+(m.x+3)+"\n20\n"+m.y+"\n30\n0\n40\n2\n1\n"+m.nome+"\n"});
+  baixar("maquinas.dxf",s+"0\nENDSEC\n0\nEOF\n","application/dxf")};
+$("fil").onchange=async function(){
+  var f=this.files[0];this.value="";if(!f)return;var n=f.name.toLowerCase();
+  try{
+    if(n.endsWith(".json")){
+      if(!canEdit){aviso("Só quem edita pode importar máquinas.");return}
+      var j=JSON.parse(await f.text());M=Array.isArray(j)?j:(j.maquinas||[]);save();lista();draw();return}
+    aviso("Lendo "+f.name+"… arquivos grandes podem demorar.");
+    await new Promise(function(r){setTimeout(r,40)});
+    var buf=await f.arrayBuffer();
+    if(n.endsWith(".bin"))usar(parseBIN(buf,mk));
+    else{var t=new TextDecoder("utf-8").decode(buf);if(t.indexOf("\uFFFD")>-1)t=new TextDecoder("windows-1252").decode(buf);usar(parseDXF(t,mk))}
+  }catch(err){aviso("Não consegui ler esse arquivo.")}
+};
+
+// Firebase (login Google + Firestore)
+async function iniciaFirebase(){
+  var B="https://www.gstatic.com/firebasejs/10.12.2/",
+      A=await import(B+"firebase-app.js"),Au=await import(B+"firebase-auth.js"),F=await import(B+"firebase-firestore.js"),
+      app=A.initializeApp(FIREBASE),auth=Au.getAuth(app),fs=F.getFirestore(app),unsub=null;
+  DB={fs:fs,doc:F.doc,setDoc:F.setDoc};
+  $("bLogin").onclick=function(){
+    if(auth.currentUser)Au.signOut(auth);
+    else Au.signInWithPopup(auth,new Au.GoogleAuthProvider()).catch(function(){aviso("Não foi possível entrar.")})};
+  Au.onAuthStateChanged(auth,async function(u){
+    if(unsub){unsub();unsub=null}
+    M=[];canEdit=false;mode="ver";sel=null;lista();ui();draw();
+    logado=!!u;$("bLogin").textContent=u?"Sair":"Entrar com Google";
+    if(!u){aviso("Entre com o Google para ver as máquinas.");return}
+    var mail=(u.email||"").toLowerCase();
+    try{var a=await F.getDoc(F.doc(fs,"config","acesso"));
+      canEdit=(a.data().editores||[]).map(function(x){return x.toLowerCase()}).indexOf(mail)>-1}
+    catch(e){aviso("Sem acesso. Peça ao dono para liberar o e-mail "+mail+".");return}
+    aviso("");
+    unsub=F.onSnapshot(F.doc(fs,"planta","maquinas"),function(s){
+      if(s.metadata.hasPendingWrites||drag)return;
+      M=s.exists()?(s.data().lista||[]):[];lista();draw()},
+      function(){aviso("Sem acesso aos dados.")});
+    ui();
+  });
+}
+
+// início
+size();
+if(FIREBASE){iniciaFirebase().catch(function(){aviso("Erro ao iniciar o login.")});aviso("Entre com o Google para ver as máquinas.")}
+else{try{M=JSON.parse(localStorage.getItem("planta_maquinas")||"[]")}catch(e){M=[]}lista()}
+ui();
+aviso("Carregando a planta…");
+fetch("planta.bin").then(function(r){if(!r.ok)throw 0;return r.arrayBuffer()})
+  .then(function(b){usar(parseBIN(b,mk));if(FIREBASE&&!logado)aviso("Entre com o Google para ver as máquinas.")})
+  .catch(function(){aviso("Toque em Abrir arquivo e escolha a planta (.dxf).")});
+</script>
+</body>
+</html>
