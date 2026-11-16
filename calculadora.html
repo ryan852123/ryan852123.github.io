@@ -91,13 +91,6 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 
 <!-- TRIÂNGULO -->
 <section class="panel" id="p1" role="tabpanel">
-  <label for="modo">Dado...</label>
-  <select id="modo">
-    <option value="1">Dois lados</option>
-    <option value="2">Ângulo e hipotenusa</option>
-    <option value="3">Ângulo e um lado</option>
-    <option value="4">Área e um lado</option>
-  </select>
   <svg viewBox="0 0 260 180" style="width:100%;max-width:300px;display:block;margin:14px auto" role="img" aria-label="Triângulo retângulo com lados a, b, c e ângulos alfa e beta">
     <polygon class="tri" points="40,150 220,150 40,30"/>
     <path class="ang" d="M40 134h16v16"/>
@@ -107,7 +100,7 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
   <div class="row"><div><label for="ul">Unidade de comprimento</label>
     <select id="ul"><option>cm</option><option>mm</option><option>m</option><option>pol</option></select></div></div>
   <div class="grid" id="campos"></div>
-  <p class="empty" style="font-size:.85rem;margin:8px 0 0">Campos em azul são calculados. Digite só os valores do modo escolhido.</p>
+  <p class="empty" style="font-size:.85rem;margin:8px 0 0">Preencha dois dados quaisquer (dois lados, um ângulo e um lado, ou área e um lado) e o resto aparece sozinho. Os campos em azul são calculados. Se digitar um terceiro, ele entra no lugar do dado mais antigo.</p>
   <div class="res" id="resT" aria-live="polite"></div>
   <div class="btns">
     <button class="btn" id="addT" disabled>Adicionar à lista</button>
@@ -133,7 +126,6 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
     <div><label for="fab">Data de fabricação</label><input id="fab" type="date"></div>
   </div>
   <div class="btns">
-    <button class="btn" id="calcE">Calcular densidade</button>
     <button class="btn sec" id="addE" disabled>Adicionar à lista</button>
   </div>
   <div class="res" id="resE" aria-live="polite"><span class="empty">Informe as medidas e o peso do bloco.</span></div>
@@ -198,6 +190,19 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
     <div><label for="fd">Densidade da espuma da faixa (kg/m³)</label><input id="fd" inputmode="decimal" value="20"></div>
   </div>
 
+  <h3>Base de madeira (se o colchão tiver)</h3>
+  <div class="row">
+    <div><label for="wt">Tipo de madeira</label><select id="wt"><option value="">Sem base de madeira</option><option value="600">Compensado (≈ 600 kg/m³)</option><option value="700">MDF (≈ 700 kg/m³)</option><option value="500">Pinus (≈ 500 kg/m³)</option><option value="650">Eucalipto (≈ 650 kg/m³)</option><option value="x">Outra (digite a densidade)</option></select></div>
+    <div><label for="wbd">Densidade (kg/m³)</label><input id="wbd" inputmode="decimal"></div>
+    <div><label for="wbe">Espessura (cm)</label><input id="wbe" inputmode="decimal" placeholder="ex.: 1,5"></div>
+  </div>
+  <div class="row">
+    <div><label for="wbc">Comprimento da base (cm)</label><input id="wbc" inputmode="decimal" placeholder="igual ao colchão"></div>
+    <div><label for="wbl">Largura da base (cm)</label><input id="wbl" inputmode="decimal" placeholder="igual ao colchão"></div>
+    <div><label for="wbo">Área coberta pela madeira (%)</label><input id="wbo" inputmode="decimal" value="100"></div>
+  </div>
+  <p class="empty" style="font-size:.85rem;margin:6px 0 0">Densidades típicas, aproximadas. Para ficar exato, pese e meça uma amostra da sua madeira na aba Densidade. Em base ripada, use a porcentagem da área que a madeira cobre.</p>
+
   <h3>Base e outros</h3>
   <div class="row">
     <div><label for="gb">Tecido da base / fundo (g/m²)</label><input id="gb" inputmode="decimal"></div>
@@ -253,23 +258,25 @@ const erro=(el,m)=>{el.innerHTML='<span class="err">'+m+'</span>'};
 
 // TRIÂNGULO
 const campos=[['a','Comprimento do lado a'],['b','Comprimento do lado b'],['c','Comprimento do lado c'],['A','Ângulo α'],['B','Ângulo β'],['S','Área']];
-const modos={1:['a','b','c'],2:['c','A','B'],3:['a','b','c','A','B'],4:['S','a','b']};
-const el={};let user={},ultimoT='';
+const el={};let user={},ordem=[],ultimoT='';
 const suf=k=>k==='A'||k==='B'?'°':k==='S'?$('ul').value+'²':$('ul').value;
 const f4=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:4});
 campos.forEach(([k,nome])=>{
   const w=document.createElement('div');
   w.innerHTML='<label for="f'+k+'">'+nome+'</label><div class="f" id="w'+k+'"><input id="f'+k+'" inputmode="decimal" autocomplete="off"><span id="s'+k+'"></span></div>';
   $('campos').appendChild(w);el[k]=$('f'+k);
-  el[k].addEventListener('input',()=>{user[k]=el[k].value.trim()!=='';resolve()});
+  el[k].addEventListener('input',()=>{
+    const on=el[k].value.trim()!=='';
+    ordem=ordem.filter(x=>x!==k&&!(k==='A'&&x==='B')&&!(k==='B'&&x==='A'));
+    if(on){ordem.push(k);while(ordem.length>2)ordem.shift()}
+    campos.forEach(([q])=>{user[q]=ordem.includes(q)});resolve()});
   el[k].addEventListener('focus',()=>{if(!user[k])el[k].select()});
 });
 const paint=()=>campos.forEach(([k])=>{$('w'+k).className='f'+(!user[k]&&el[k].value!==''?' calc':'')});
 function resolve(){
-  const ed=modos[$('modo').value],r=Math.PI/180,v={};let bad=false;
+  const r=Math.PI/180,v={};let bad=false;
   campos.forEach(([k])=>{
-    el[k].readOnly=!ed.includes(k);$('s'+k).textContent=suf(k);
-    if(el[k].readOnly)user[k]=false;
+    $('s'+k).textContent=suf(k);
     if(user[k]){const n=num(el[k].value);if(n>0)v[k]=n;else bad=true}
   });
   atual.T=null;ultimoT='';$('addT').disabled=true;
@@ -278,11 +285,12 @@ function resolve(){
   let {a,b,c,A,B,S}=v;
   const ang=A!==undefined?A:(B!==undefined?90-B:undefined);
   try{
-    if(['a','b','c'].filter(k=>v[k]!==undefined).length===3)throw 'Informe apenas dois lados; o terceiro é calculado.';
+    if(Object.keys(v).length<2)throw 'need';
     if(ang!==undefined){
       if(ang>=90)throw 'O ângulo deve ser menor que 90°.';
       const t=ang*r;
-      if(a!==undefined){b=a/Math.tan(t);c=a/Math.sin(t)}
+      if(S!==undefined){a=Math.sqrt(2*S*Math.tan(t));b=a/Math.tan(t);c=Math.hypot(a,b)}
+      else if(a!==undefined){b=a/Math.tan(t);c=a/Math.sin(t)}
       else if(b!==undefined){a=b*Math.tan(t);c=b/Math.cos(t)}
       else if(c!==undefined){a=c*Math.sin(t);b=c*Math.cos(t)}
       else throw 'need';
@@ -292,9 +300,10 @@ function resolve(){
     }else if(a!==undefined&&b!==undefined)c=Math.hypot(a,b);
     else if(a!==undefined&&c!==undefined){if(c<=a)throw 'A hipotenusa deve ser maior que o lado a.';b=Math.sqrt(c*c-a*a)}
     else if(b!==undefined&&c!==undefined){if(c<=b)throw 'A hipotenusa deve ser maior que o lado b.';a=Math.sqrt(c*c-b*b)}
+    else if(S!==undefined&&c!==undefined)throw 'Com área e hipotenusa há duas soluções. Informe um lado ou um ângulo.';
     else throw 'need';
   }catch(e){
-    return fim(e==='need'?'<span class="empty">Preencha os campos para ver o resultado.</span>':'<span class="err">'+e+'</span>');
+    return fim(e==='need'?'<span class="empty">Preencha dois dados para ver o resultado.</span>':'<span class="err">'+e+'</span>');
   }
   const al=Math.atan2(a,b)/r,be=90-al,area=a*b/2,vals={a,b,c,A:al,B:be,S:area};
   campos.forEach(([k])=>{if(!user[k])el[k].value=f4(vals[k])});paint();
@@ -320,9 +329,9 @@ function resolve(){
   ultimoT='Triângulo retângulo\n'+ent+'\n'+res;
   $('addT').disabled=false;
 }
-function resetT(){user={};campos.forEach(([k])=>{el[k].value=''});resolve()}
+function resetT(){user={};ordem=[];campos.forEach(([k])=>{el[k].value=''});resolve()}
 resolve();
-$('modo').onchange=resetT;$('limpaT').onclick=resetT;$('ul').onchange=resolve;
+$('limpaT').onclick=resetT;$('ul').onchange=resolve;
 $('shareT').onclick=()=>{
   if(!ultimoT)return;const b=$('shareT');
   (navigator.clipboard?navigator.clipboard.writeText(ultimoT):Promise.reject()).then(()=>{b.textContent='Copiado!'},()=>{prompt('Copie o resultado:',ultimoT)});
@@ -330,13 +339,15 @@ $('shareT').onclick=()=>{
 };
 
 // ESPUMA
-$('calcE').onclick=()=>{
+const calcE=()=>{
   const c=num($('comp').value),l=num($('larg').value),e=num($('esp').value);
   let p=num($('peso').value);
   atual.E=null;$('addE').disabled=true;
-  if(!(c>0&&l>0&&e>0&&p>0))return erro($('resE'),'Preencha todas as medidas e o peso com valores maiores que zero.');
+  if(!(c>0&&l>0&&e>0))return void($('resE').innerHTML='<span class="empty">Preencha comprimento, largura e espessura para ver o volume.</span>');
+  const m3=c*l*e/1e6;
+  if(!(p>0))return void($('resE').innerHTML='Volume: <b>'+fmt(m3,4)+' m³</b><br><span class="empty">Informe o peso para ver a densidade.</span>');
   if($('un').value==='g')p/=1000;
-  const m3=c*l*e/1e6,d=p/m3;
+  const d=p/m3;
   const prox=classes.reduce((a,b)=>Math.abs(b-d)<Math.abs(a-d)?b:a);
   const o=$('origem').value.trim(),f=dataBR($('fab').value);
   $('resE').innerHTML='Densidade: <b>'+fmt(d)+' kg/m³</b><br>Volume: '+fmt(m3,4)+' m³<br>Classe mais próxima: D'+prox+
@@ -350,6 +361,7 @@ $('calcE').onclick=()=>{
     'As espumas são classificadas por densidade (D18, D20, D23, D26, D28, D33...). A classe mais próxima de '+fmt(d)+' kg/m³ é D'+prox+', com diferença de '+fmt(Math.abs(d-prox))+' kg/m³.']};
   $('addE').disabled=false;
 };
+$('p2').addEventListener('input',calcE);$('p2').addEventListener('change',calcE);calcE();
 
 // CALCULADORA (sem eval)
 function avalia(s){
@@ -478,6 +490,12 @@ function calcM(){
       if(z('fe')>0&&z('fd')>0)parts.push(['Faixa','Faixa: espuma D'+fmt(z('fd'),0),fa*z('fe')/100*z('fd'),fx+' × '+fmt(z('fe'),1)+' cm (= '+fmt(z('fe')/100,3)+' m) × '+fmt(z('fd'),0)+' kg/m³']);
     }else aviso+='<br><span class="err">Informe a altura total para incluir a faixa.</span>';
   }
+  if(z('wbe')>0&&z('wbd')>0){
+    const wc=z('wbc')>0?z('wbc')/100:c,wl=z('wbl')>0?z('wbl')/100:l,oc=z('wbo')>0?Math.min(z('wbo'),100)/100:1,we=z('wbe')/100,wd2=z('wbd'),
+      nome=$('wt').selectedIndex>0&&$('wt').value!=='x'?$('wt').options[$('wt').selectedIndex].text.split(' (')[0]:'madeira';
+    parts.push(['Base','Base de madeira ('+nome+')',wc*wl*oc*we*wd2,fmt(wc,2)+' m × '+fmt(wl,2)+' m'+(oc<1?' × '+fmt(oc*100,0)+'% de área coberta':'')+' × '+fmt(z('wbe'),1)+' cm (= '+fmt(we,3)+' m) × '+fmt(wd2,0)+' kg/m³']);
+    passos.push('Base de madeira ('+nome+'): '+fmt(wc*100,1)+' × '+fmt(wl*100,1)+' cm, espessura de '+fmt(z('wbe'),1)+' cm'+(oc<1?', cobrindo '+fmt(oc*100,0)+'% da área':'')+'. Peso = volume (m³) × densidade ('+fmt(wd2,0)+' kg/m³) = '+fmt(wc*wl*oc*we,4)+' m³ × '+fmt(wd2,0)+' = '+fmt(wc*wl*oc*we*wd2)+' kg.');
+  }
   if(z('gb')>0)parts.push(['Base','Base: tecido',area*z('gb')/1000,fmt(area,3)+' m² × '+fmt(z('gb'),0)+' g/m² ÷ 1000']);
   if(z('mo')>0)parts.push(['Outros','Outros itens',z('mo'),'valor informado em kg']);
   const tot=parts.reduce((t,p)=>t+p[2],0);
@@ -497,14 +515,25 @@ function calcM(){
       lin:parts.map(p=>[p[0],p[1],p[2],p[2]/tot*100,p[3]]).concat([['','TOTAL',tot,100,'Soma de todos os componentes']])}};
   $('addM').disabled=false;
 }
+const padM={};document.querySelectorAll('#p4 input[id],#p4 select[id]').forEach(e=>{padM[e.id]=e.value});
+function zerarM(){
+  document.querySelectorAll('#p4 input[id],#p4 select[id]').forEach(e=>{e.value=padM[e.id]});
+  $('laminas').innerHTML='';$('camTampo').innerHTML='';
+  novaCamada('laminas');novaCamada('laminas');novaCamada('camTampo');calcM();
+}
 novaCamada('laminas');novaCamada('laminas');novaCamada('camTampo');
 $('addLam').onclick=()=>{novaCamada('laminas');calcM()};
 $('addTam').onclick=()=>{novaCamada('camTampo');calcM()};
 $('p4').addEventListener('input',calcM);
+$('wt').onchange=()=>{$('wbd').value=$('wt').value==='x'?'':$('wt').value;calcM()};
 $('mat').onchange=()=>{$('wd').value=$('mat').value;$('wd').placeholder=$('mat').selectedIndex?'ex.: 550':'';calcM()};
 $('et').onchange=()=>{$('lga').value=$('et').value;$('cba').value=$('et').value;calcM()};
 calcM();
-$('addM').onclick=()=>add('M',$('addM'));
+$('addM').onclick=()=>{
+  if(!atual.M)return;
+  if(!confirm('Adicionar "'+atual.M.tipo+'" à lista e limpar os campos para o próximo colchão?'))return;
+  add('M',$('addM'));zerarM();
+};
 
 // LISTA
 function add(k,btn){
