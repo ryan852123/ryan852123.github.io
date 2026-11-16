@@ -3,19 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Calculadora: Triângulo, Espuma e Básica</title>
+<title>Calculadora: Triângulo, Densidade e Básica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f3f6fb;--card:#fff;--ink:#1d2b3a;--mut:#667789;--line:#d5dde7;--acc:#2f6fed;--res:#e6efff}
-@media (prefers-color-scheme:dark){:root{--bg:#10161d;--card:#1a232d;--ink:#e6ecf2;--mut:#93a2b3;--line:#2f3d4c;--acc:#5b93ff;--res:#1e2f4a}}
+:root{--sky1:#bcd7f2;--sky2:#f3f8fd;--bld:#8aa6c4;--win:rgba(255,255,255,.8);--win2:rgba(255,205,110,.9);
+  --bg:rgba(255,255,255,.4);--card:rgba(255,255,255,.58);--ink:#0d1a31;--mut:#3b4c68;--line:rgba(13,26,49,.22);--acc:#0a7ea4;--accink:#fff;--res:rgba(10,126,164,.16);--glow:rgba(10,126,164,.35)}
+@media (prefers-color-scheme:dark){:root{--sky1:#050a17;--sky2:#13294d;--bld:#09122a;--win:rgba(92,225,255,.85);--win2:rgba(255,196,102,.9);
+  --bg:rgba(8,16,32,.45);--card:rgba(16,30,58,.58);--ink:#e9f1fb;--mut:#a6b8d4;--line:rgba(130,190,255,.25);--acc:#5ce1ff;--accink:#06101f;--res:rgba(92,225,255,.14);--glow:rgba(92,225,255,.4)}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Segoe UI",Roboto,Arial,sans-serif}
-main{max-width:720px;margin:0 auto;padding:24px 16px 48px}
-h1{font-size:1.6rem;margin:0 0 4px}
+body{margin:0;min-height:100vh;background:var(--sky2) linear-gradient(var(--sky1),var(--sky2)) fixed;color:var(--ink);font:16px/1.5 "Chakra Petch",system-ui,"Segoe UI",Roboto,Arial,sans-serif}
+#sky{position:fixed;left:0;bottom:0;width:100%;height:58vh;z-index:0;pointer-events:none}
+#sky .b{fill:var(--bld)}#sky .w{fill:var(--win)}#sky .w2{fill:var(--win2)}
+main{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:24px 16px 48px}
+.back{color:var(--acc);font-weight:700;text-decoration:none;display:inline-block;margin-bottom:8px}
+h1{font-size:1.7rem;margin:0 0 4px;color:var(--acc);text-shadow:0 0 22px var(--glow);letter-spacing:-.01em}
 p.sub{margin:0 0 18px;color:var(--mut)}
 .tabs{display:flex;gap:6px;margin-bottom:12px}
-.tabs button{flex:1;padding:10px 6px;border:1px solid var(--line);background:var(--card);color:var(--mut);font:inherit;font-weight:600;cursor:pointer;border-radius:999px}
-.tabs button[aria-selected=true]{background:var(--acc);border-color:var(--acc);color:#fff}
-.panel{background:var(--card);padding:20px;border:1px solid var(--line);border-radius:12px}
+.tabs button{-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);flex:1;padding:10px 6px;border:1px solid var(--line);background:var(--card);color:var(--mut);font:inherit;font-weight:600;cursor:pointer;border-radius:999px}
+.tabs button[aria-selected=true]{background:var(--acc);border-color:var(--acc);color:var(--accink);box-shadow:0 0 16px var(--glow)}
+.panel{background:var(--card);padding:20px;border:1px solid var(--line);border-radius:14px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .panel[hidden]{display:none}
 label{display:block;font-size:.88rem;font-weight:600;color:var(--mut);margin:12px 0 4px}
 .row{display:flex;gap:10px;flex-wrap:wrap}.row>div{flex:1;min-width:120px}
@@ -31,7 +38,7 @@ input,select{width:100%;padding:10px;font:inherit;color:var(--ink);background:va
 .ang{fill:none;stroke:var(--acc);stroke-width:1.5}
 .lbl{fill:var(--ink);font-size:17px;font-style:italic}
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;align-items:center}
-.btn{padding:10px 16px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:600;border-radius:8px;cursor:pointer}
+.btn{padding:10px 16px;border:0;background:var(--acc);color:var(--accink);font:inherit;font-weight:600;border-radius:8px;cursor:pointer}
 .btn.sec{background:transparent;color:var(--acc);border:1px solid var(--line)}
 .btn:disabled{opacity:.5;cursor:default}
 .lnk{background:none;border:0;color:var(--acc);font:inherit;text-decoration:underline;cursor:pointer;padding:8px}
@@ -49,11 +56,11 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
 .keys button{padding:14px 0;font:inherit;font-size:1.15rem;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;cursor:pointer}
 .keys button.op{background:var(--res);color:var(--acc);border-color:var(--res);font-weight:600}
-.keys button.eq{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
+.keys button.eq{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600}
 #rel{display:none}
 @media print{
   body{background:#fff;color:#000}
-  main{display:none}
+  main,#sky{display:none}
   #rel{display:block;font:11.5pt/1.5 system-ui,"Segoe UI",Arial,sans-serif;color:#000}
   #rel h1{font-size:20pt;margin:0 0 2px}
   #rel h2{font-size:13pt;margin:16px 0 6px;border-bottom:2px solid #2f6fed;padding-bottom:2px}
@@ -69,13 +76,15 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 </style>
 </head>
 <body>
+<svg id="sky" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
 <main>
-<h1>Calculadora de Triângulo, Espuma e Básica</h1>
+<a class="back" href="index.html">← Portfólio</a>
+<h1>Calculadora de Triângulo, Densidade e Básica</h1>
 <p class="sub">Calcule, guarde os resultados na lista e baixe tudo em um arquivo.</p>
 
 <div class="tabs" role="tablist">
   <button role="tab" id="t1" aria-selected="true">Triângulo</button>
-  <button role="tab" id="t2" aria-selected="false">Espuma</button>
+  <button role="tab" id="t2" aria-selected="false">Densidade</button>
   <button role="tab" id="t4" aria-selected="false">Colchão</button>
   <button role="tab" id="t3" aria-selected="false">Calculadora</button>
 </div>
@@ -220,6 +229,16 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 <div id="rel" aria-hidden="true"></div>
 
 <script>
+(function(){var s=document.getElementById("sky"),W=1200,H=400,x=0,r=7,h="";
+function R(){r=(r*9301+49297)%233280;return r/233280}
+while(x<W){var w=40+(R()*70|0),bh=90+(R()*260|0);
+h+='<rect class="b" x="'+x+'" y="'+(H-bh)+'" width="'+w+'" height="'+bh+'"/>';
+if(R()>.6)h+='<rect class="b" x="'+(x+w/2-2)+'" y="'+(H-bh-30)+'" width="4" height="30"/>';
+for(var yy=H-bh+12;yy<H-8;yy+=16)for(var xx=x+8;xx<x+w-10;xx+=14)if(R()>.72)h+='<rect class="'+(R()>.8?'w2':'w')+'" x="'+xx+'" y="'+yy+'" width="5" height="7"/>';
+x+=w+(R()*10|0)}
+s.innerHTML=h})();
+</script>
+<script>
 const $=id=>document.getElementById(id);
 const num=v=>parseFloat(String(v).trim().replace(',','.'));
 const fmt=(n,d=2)=>n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -323,7 +342,7 @@ $('calcE').onclick=()=>{
   $('resE').innerHTML='Densidade: <b>'+fmt(d)+' kg/m³</b><br>Volume: '+fmt(m3,4)+' m³<br>Classe mais próxima: D'+prox+
     '<br>Origem: '+(o||'não informada')+'<br>Fabricação: '+(f||'não informada');
   const un=$('un').value,pt=$('peso').value;
-  atual.E={tipo:'Espuma',entrada:c+'x'+l+'x'+e+' cm; '+fmt(p,3)+' kg',resultado:fmt(d)+' kg/m³ (D'+prox+')',origem:o,fab:f,passos:[
+  atual.E={tipo:'Densidade',entrada:c+'x'+l+'x'+e+' cm; '+fmt(p,3)+' kg',resultado:fmt(d)+' kg/m³ (D'+prox+')',origem:o,fab:f,passos:[
     'Dados informados: bloco de '+fmt(c,1)+' × '+fmt(l,1)+' × '+fmt(e,1)+' cm (comprimento × largura × espessura), pesando '+pt+' '+un+'.',
     'Volume = comprimento × largura × espessura = '+fmt(c,1)+' × '+fmt(l,1)+' × '+fmt(e,1)+' = '+fmt(c*l*e,0)+' cm³. Como 1 m³ = 1.000.000 cm³, o volume é '+fmt(m3,4)+' m³.',
     un==='g'?'Peso em kg = '+pt+' g ÷ 1000 = '+fmt(p,3)+' kg.':'Peso usado no cálculo: '+fmt(p,3)+' kg.',

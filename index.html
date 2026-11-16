@@ -50,6 +50,8 @@ dialog{border:1px solid var(--acc);border-radius:14px;background:var(--glass);-w
 dialog::backdrop{background:rgba(5,10,23,.55)}
 dialog h3{margin:0 0 6px;font-size:1.4rem;overflow-wrap:anywhere}
 .close{float:right;background:none;border:0;color:var(--muted);font:inherit;font-size:1.7rem;line-height:1;cursor:pointer}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.btn.sec{background:var(--glass);color:var(--ink);border:1px solid var(--acc);box-shadow:none}
 footer{margin-top:28px;color:var(--muted)}
 footer a{color:var(--acc);font-weight:700}
 </style>
@@ -87,7 +89,17 @@ footer a{color:var(--acc);font-weight:700}
     <div class="grid" id="grid"></div>
   </section>
 
-  <footer>Veja todos os meus repositórios no <a href="https://github.com/ryan852123" target="_blank" rel="noopener">GitHub</a>.</footer>
+  <section class="glass" id="contato">
+    <h2>Contato</h2>
+    <p>Vamos conversar? Me chame por e-mail ou pelo LinkedIn.</p>
+    <div class="links">
+      <a class="btn" href="mailto:ryanjosueyrion@gmail.com">E-mail</a>
+      <a class="btn sec" href="https://www.linkedin.com/in/ryanjosueyrion" target="_blank" rel="noopener">LinkedIn</a>
+      <a class="btn sec" href="https://github.com/ryan852123" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </section>
+
+  <footer>Ryan · Portfólio</footer>
 </main>
 
 <dialog id="dlg" aria-labelledby="dt">
@@ -113,8 +125,7 @@ footer a{color:var(--acc);font-weight:700}
   s.innerHTML=h;
 })();
 var P=[
- ["Calculadora","App","Calculadora de triângulo, densidade, colchão e básica, com relatório para imprimir. Abre direto aqui no site.","calculadora.html","Abrir a calculadora"],
- ["Planta da fábrica","App","Mapa da fábrica com a localização das máquinas. Acesso só com login.","planta.html","Abrir a planta"],
+ ["Calculadora","App","Calculadora de triângulo, espuma, colchão e básica, com relatório para imprimir. Abre direto aqui no site.","calculadora.html","Abrir a calculadora"],
  ["ni3-app","Aplicativo","Aplicativo publicado no GitHub."],
  ["NI03","Projeto","Projeto publicado no GitHub."],
  ["França","Projeto","Projeto publicado no GitHub."],
@@ -150,3 +161,8 @@ d.addEventListener("click",function(e){if(e.target===d)d.close()});
 </script>
 </body>
 </html>
+<!--
+  Contato (para quem lê o código):
+  E-mail:   ryanjosueyrion@gmail.com
+  WhatsApp: +55 92 99329-5291  (só mensagem, não atendo ligações)
+-->
