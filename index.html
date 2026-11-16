@@ -52,6 +52,13 @@ dialog h3{margin:0 0 6px;font-size:1.4rem;overflow-wrap:anywhere}
 .close{float:right;background:none;border:0;color:var(--muted);font:inherit;font-size:1.7rem;line-height:1;cursor:pointer}
 .links{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
 .btn.sec{background:var(--glass);color:var(--ink);border:1px solid var(--acc);box-shadow:none}
+.clock{color:var(--muted);font-size:.8rem;letter-spacing:.04em;margin-bottom:8px;font-variant-numeric:tabular-nums}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 8px}
+.pill{font:inherit;color:var(--ink);background:var(--glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--acc);border-radius:999px;padding:6px 14px;font-weight:600;cursor:pointer}
+.pill[aria-expanded="true"]{background:var(--btn);color:var(--btn-ink)}
+.pill:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.verse{color:var(--muted);font-style:italic}
+.verse blockquote{margin:0 0 6px}.verse cite{font-style:normal;font-weight:600;color:var(--ink)}
 footer{margin-top:28px;color:var(--muted)}
 footer a{color:var(--acc);font-weight:700}
 </style>
@@ -59,8 +66,14 @@ footer a{color:var(--acc);font-weight:700}
 <body>
 <svg id="sky" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
 <main>
+  <div class="clock"><time id="clk"></time></div>
   <h1>Ryan</h1>
-  <p class="role">Inspetor da qualidade e programador</p>
+  <div class="pills">
+    <button class="pill" data-k="ins" aria-expanded="false" aria-controls="info">Inspetor da qualidade</button>
+    <button class="pill" data-k="prog" aria-expanded="false" aria-controls="info">Programador</button>
+    <button class="pill" data-k="ia" aria-expanded="false" aria-controls="info">Uso de IA</button>
+  </div>
+  <p class="glass" id="info" hidden style="margin:0 0 14px"></p>
   <a class="btn" href="calculadora.html">Abrir a calculadora</a>
 
   <section class="glass">
@@ -71,7 +84,7 @@ footer a{color:var(--acc);font-weight:700}
 
   <section class="glass">
     <h2>Conhecimentos</h2>
-    <ul class="chips"><li>C#</li><li>HTML</li><li>CSS</li><li>Comandos elétricos</li><li>Relatórios</li><li>Controle de qualidade</li></ul>
+    <ul class="chips"><li>C#</li><li>HTML</li><li>CSS</li><li>Comandos elétricos</li><li>Relatórios</li><li>Controle de qualidade</li><li>Inteligência artificial (IA)</li></ul>
   </section>
 
   <section class="glass">
@@ -87,6 +100,7 @@ footer a{color:var(--acc);font-weight:700}
     <h2>Projetos</h2>
     <p>Toque em um cartão para ver os detalhes e abrir o projeto.</p>
     <div class="grid" id="grid"></div>
+    <p id="gmsg" style="margin:12px 0 0;color:var(--muted)"></p>
   </section>
 
   <section class="glass" id="contato">
@@ -97,6 +111,11 @@ footer a{color:var(--acc);font-weight:700}
       <a class="btn sec" href="https://www.linkedin.com/in/ryanjosueyrion" target="_blank" rel="noopener">LinkedIn</a>
       <a class="btn sec" href="https://github.com/ryan852123" target="_blank" rel="noopener">GitHub</a>
     </div>
+  </section>
+
+  <section class="glass verse" aria-label="Versículo">
+    <blockquote id="vTxt"></blockquote>
+    <cite id="vRef"></cite>
   </section>
 
   <footer>Ryan · Portfólio</footer>
@@ -124,37 +143,86 @@ footer a{color:var(--acc);font-weight:700}
   }
   s.innerHTML=h;
 })();
-var P=[
- ["Calculadora","App","Calculadora de triângulo, espuma, colchão e básica, com relatório para imprimir. Abre direto aqui no site.","calculadora.html","Abrir a calculadora"],
- ["ni3-app","Aplicativo","Aplicativo publicado no GitHub."],
- ["NI03","Projeto","Projeto publicado no GitHub."],
- ["França","Projeto","Projeto publicado no GitHub."],
- ["Ryan-Eletrotecnico","Estudos","Projeto ligado à área de eletrotécnica."],
- ["Lili-Back","Back-end","Parte do servidor do projeto Lili."],
- ["Lili-Front","Front-end","Parte visual do projeto Lili."],
- ["-tutelar","Projeto","Projeto publicado no GitHub."],
- ["fps-microgame","Jogo","Microjogo de tiro em primeira pessoa."],
- ["projeto-2d","Jogo 2D","Projeto de jogo em duas dimensões."]
+var OCULTOS=[]; // nomes de repositórios públicos que você não quer mostrar, ex.: ["teste","antigo"]
+var P=[["Calculadora","App","Calculadora de triângulo, densidade, colchão e básica, com relatório para imprimir. Abre direto aqui no site.","calculadora.html","Abrir a calculadora"]];
+var g=document.getElementById("grid"),d=document.getElementById("dlg"),gm=document.getElementById("gmsg");
+function desenhaProjetos(){
+  g.innerHTML="";
+  P.forEach(function(p){
+    var b=document.createElement("button");
+    b.className="card";
+    b.innerHTML="<b></b><span class='tag'></span>";
+    b.querySelector("b").textContent=p[0];
+    b.querySelector(".tag").textContent=p[1];
+    b.onclick=function(){
+      document.getElementById("dt").textContent=p[0];
+      document.getElementById("dtag").textContent=p[1];
+      document.getElementById("dd").textContent=p[2];
+      var a=document.getElementById("dl"),ext=/^https?:/.test(p[3]);
+      a.target=ext?"_blank":"_self";a.href=p[3];a.textContent=p[4];
+      d.showModal();
+    };
+    g.appendChild(b);
+  });
+}
+desenhaProjetos();
+gm.textContent="Carregando seus projetos do GitHub…";
+fetch("https://api.github.com/users/ryan852123/repos?per_page=100&sort=pushed")
+  .then(function(r){if(!r.ok)throw 0;return r.json()})
+  .then(function(rs){
+    rs.filter(function(r){return !r.fork&&!r.private&&r.name!=="ryan852123.github.io"&&OCULTOS.indexOf(r.name)<0})
+      .forEach(function(r){P.push([r.name,r.language||"Projeto",r.description||"Projeto publicado no GitHub.",r.html_url,"Abrir no GitHub"])});
+    desenhaProjetos();gm.textContent="";
+  })
+  .catch(function(){gm.innerHTML="Não consegui carregar os repositórios agora. Veja todos no <a href='https://github.com/ryan852123' target='_blank' rel='noopener'>GitHub</a>."});
+
+// pílulas: textos escondidos até tocar
+var TX={
+  ins:"Trabalho como inspetor da qualidade na Rodrigues Colchões, conferindo se cada produto sai dentro do padrão e registrando os resultados em relatórios.",
+  prog:"Programo em C#, HTML e CSS e estudo Análise e Desenvolvimento de Sistemas. Gosto de criar ferramentas que resolvem problemas do dia a dia, como a calculadora aqui do site.",
+  ia:"Uso inteligência artificial para criar e agilizar meus projetos."
+};
+var pills=document.querySelectorAll(".pill"),info=document.getElementById("info");
+pills.forEach(function(b){b.onclick=function(){
+  var abrir=b.getAttribute("aria-expanded")!=="true";
+  pills.forEach(function(x){x.setAttribute("aria-expanded","false")});
+  info.hidden=!abrir;
+  if(abrir){b.setAttribute("aria-expanded","true");info.textContent=TX[b.dataset.k]}
+}});
+
+// relógio discreto
+var DS=["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"],
+    MS=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+function z2(n){return n<10?"0"+n:""+n}
+function relogio(){
+  var d=new Date(),y=d.getFullYear(),
+      dia=Math.round((Date.UTC(y,d.getMonth(),d.getDate())-Date.UTC(y,0,0))/864e5),
+      t=new Date(Date.UTC(y,d.getMonth(),d.getDate())),n=t.getUTCDay()||7;
+  t.setUTCDate(t.getUTCDate()+4-n);
+  var sem=Math.ceil(((t-Date.UTC(t.getUTCFullYear(),0,1))/864e5+1)/7);
+  document.getElementById("clk").textContent=DS[d.getDay()]+", "+d.getDate()+" de "+MS[d.getMonth()]+" de "+y+" · "+z2(d.getHours())+":"+z2(d.getMinutes())+":"+z2(d.getSeconds())+" · dia "+dia+" · semana "+sem;
+}
+relogio();setInterval(relogio,1000);
+
+// versículo (Almeida Revista e Corrigida), muda a cada visita
+var V=[
+ ["Confia no SENHOR de todo o teu coração e não te estribes no teu próprio entendimento.","Provérbios 3:5"],
+ ["O SENHOR é o meu pastor, nada me faltará.","Salmos 23:1"],
+ ["Posso todas as coisas em Cristo que me fortalece.","Filipenses 4:13"],
+ ["E tudo quanto fizerdes, fazei-o de todo o coração, como ao Senhor e não aos homens.","Colossenses 3:23"],
+ ["Deus é o nosso refúgio e fortaleza, socorro bem presente na angústia.","Salmos 46:1"],
+ ["Mas buscai primeiro o reino de Deus, e a sua justiça, e todas estas coisas vos serão acrescentadas.","Mateus 6:33"],
+ ["Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te fortaleço, e te ajudo, e te sustento com a destra da minha justiça.","Isaías 41:10"],
+ ["Tudo tem o seu tempo determinado, e há tempo para todo o propósito debaixo do céu.","Eclesiastes 3:1"],
+ ["E sabemos que todas as coisas contribuem juntamente para o bem daqueles que amam a Deus, daqueles que são chamados por seu decreto.","Romanos 8:28"],
+ ["Como o ferro com o ferro se afia, assim o homem afia o rosto do seu amigo.","Provérbios 27:17"],
+ ["Todas as vossas coisas sejam feitas com amor.","1 Coríntios 16:14"]
 ];
-var g=document.getElementById("grid"),d=document.getElementById("dlg");
-P.forEach(function(p){
-  var b=document.createElement("button");
-  b.className="card";
-  b.innerHTML="<b></b><span class='tag'></span>";
-  b.querySelector("b").textContent=p[0];
-  b.querySelector(".tag").textContent=p[1];
-  b.onclick=function(){
-    document.getElementById("dt").textContent=p[0];
-    document.getElementById("dtag").textContent=p[1];
-    document.getElementById("dd").textContent=p[2];
-    var a=document.getElementById("dl");
-    a.target=p[3]?"_self":"_blank";
-    a.href=p[3]||"https://github.com/ryan852123/"+encodeURIComponent(p[0]);
-    a.textContent=p[4]||"Abrir no GitHub";
-    d.showModal();
-  };
-  g.appendChild(b);
-});
+var u=-1;try{u=+localStorage.getItem("verso_ult")}catch(e){}
+var vi;do{vi=Math.floor(Math.random()*V.length)}while(vi===u&&V.length>1);
+try{localStorage.setItem("verso_ult",vi)}catch(e){}
+document.getElementById("vTxt").textContent="“"+V[vi][0]+"”";
+document.getElementById("vRef").textContent=V[vi][1]+" (ARC)";
 d.querySelector(".close").onclick=function(){d.close()};
 d.addEventListener("click",function(e){if(e.target===d)d.close()});
 </script>
