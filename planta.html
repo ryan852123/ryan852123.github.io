@@ -12,12 +12,26 @@
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-#bar,#bar2{display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--bar);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap;flex:none}
+#bar{display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--bar);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap;flex:none}
 #bar a{color:var(--acc);font-weight:700;text-decoration:none}
 button,select,input{font:inherit;color:var(--ink)}
 button{background:var(--btn);color:var(--btn-ink);border:0;border-radius:8px;padding:8px 12px;font-weight:600;cursor:pointer;flex:none}
 button.on{outline:3px solid var(--acc)}
 select,input{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 8px;min-width:0}
+#dock{display:flex;gap:8px;padding:8px 10px;background:var(--bar);border-top:1px solid var(--line);overflow-x:auto;flex:none}
+.grp{display:flex;gap:6px;flex:none}
+.grp+.grp{padding-left:8px;border-left:1px solid var(--line)}
+.tb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:62px;padding:6px 8px;font-size:.72rem;font-weight:600;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:10px}
+.tb i{font-style:normal;font-size:1.3rem;line-height:1}
+.tb.on{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.tb.ok{background:var(--btn);color:var(--btn-ink)}
+.tb:disabled{opacity:.35}
+.sep{width:1px;background:var(--line);margin:0 2px;flex:none}
+#tipoAdd{align-self:center;max-width:150px}
+#perfilTag{background:var(--btn);color:var(--btn-ink);border-radius:999px;padding:3px 10px;font-size:.75rem;font-weight:700;flex:none}
+#leg{position:absolute;left:8px;bottom:8px;background:var(--bar);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:.72rem;line-height:1.6;pointer-events:none;max-width:70%}
+#leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+#sel select{flex:none;max-width:42%}
 #stage{position:relative;flex:1;min-height:0}
 #cv{position:absolute;inset:0;touch-action:none;display:block}
 #msg{position:absolute;left:10px;right:10px;top:10px;background:var(--bar);border:1px solid var(--acc);border-radius:10px;padding:10px 12px;display:none}
@@ -30,22 +44,53 @@ select,input{background:var(--bg);border:1px solid var(--line);border-radius:8px
 <body>
 <header id="bar">
   <a href="index.html" aria-label="Voltar">←</a>
-  <select id="lista" aria-label="Buscar máquina"><option value="">Buscar máquina…</option></select>
+  <select id="lista" aria-label="Buscar"><option value="">Buscar…</option></select>
+  <select id="ver" aria-label="O que mostrar" hidden><option value="todos">Mostrar: tudo</option><option value="manut">Só manutenção</option><option value="sesmt">Só SESMT</option></select>
+  <span id="perfilTag" hidden></span>
   <button id="bLogin" hidden>Entrar com Google</button>
   <button id="bEdit" hidden>Editar</button>
-  <button id="bAdd" hidden>+ Máquina</button>
   <button id="bLin" hidden>Editar linhas</button>
+  <button id="bMed" hidden>Medir</button>
   <button id="bOpen">Abrir arquivo</button>
   <button id="bSend" hidden>Enviar planta</button>
   <button id="bDxf">Exportar DXF</button>
   <button id="bJson">Backup JSON</button>
 </header>
-<header id="bar2" hidden>
-  <button id="tSel">Selecionar</button><button id="tMov">Mover</button><button id="tLin">Linha</button><button id="tMed">Medir</button><button id="tEsc">Escala</button><button id="tDel">Apagar</button><button id="tUnd">Desfazer</button>
-</header>
-<div id="stage"><canvas id="cv"></canvas><div id="msg" role="status"></div></div>
+<div id="stage"><canvas id="cv"></canvas><div id="leg" hidden></div><div id="msg" role="status"></div></div>
+<nav id="dock" hidden aria-label="Ferramentas">
+  <div class="grp" id="gCtx" hidden>
+    <button class="tb ok" id="tOk"><i>✓</i><span>Concluir</span></button>
+    <button class="tb" id="tLen"><i>📐</i><span>Medida exata</span></button>
+    <button class="tb" id="tBk"><i>⌫</i><span>Voltar ponto</span></button>
+    <button class="tb" id="tCn"><i>✕</i><span id="tCnT">Cancelar</span></button>
+  </div>
+  <div class="grp" id="gOpt" hidden>
+    <button class="tb" id="tIma"><i>🧲</i><span>Ímã</span></button>
+    <button class="tb" id="tOrt"><i>⟂</i><span>Reto</span></button>
+    <button class="tb ok" id="tFim" hidden><i>✓</i><span>Fechar medição</span></button>
+  </div>
+  <div class="grp" id="gMaq" hidden>
+    <button class="tb" id="bAdd"><i>＋</i><span>Adicionar</span></button>
+    <select id="tipoAdd" aria-label="Tipo do ponto"></select>
+  </div>
+  <div class="grp" id="gLin" hidden>
+    <button class="tb" id="tLin"><i>╱</i><span>Linha</span></button>
+    <button class="tb" id="tRet"><i>▭</i><span>Retângulo</span></button>
+    <button class="tb" id="tCir"><i>◯</i><span>Círculo</span></button>
+    <span class="sep"></span>
+    <button class="tb" id="tSel"><i>⬚</i><span>Selecionar</span></button>
+    <button class="tb" id="tMov"><i>✥</i><span>Mover</span></button>
+    <button class="tb" id="tDel"><i>🗑</i><span>Apagar</span></button>
+    <button class="tb" id="tUnd"><i>↶</i><span>Desfazer</span></button>
+    <button class="tb" id="tRef"><i>↷</i><span>Refazer</span></button>
+    <span class="sep"></span>
+    <button class="tb" id="tMed"><i>📏</i><span>Medir</span></button>
+    <button class="tb" id="tEsc"><i>⇔</i><span>Escala</span></button>
+  </div>
+</nav>
 <div id="sel" hidden>
-  <input id="nome" placeholder="Nome da máquina" aria-label="Nome da máquina">
+  <select id="tipoSel" aria-label="Tipo"></select>
+  <input id="nome" placeholder="Nome" aria-label="Nome">
   <button id="bDel">Excluir</button>
   <button id="bOk">Fechar</button>
 </div>
@@ -116,9 +161,18 @@ function toBIN(d){
 var $=function(i){return document.getElementById(i)};
 var cv=$("cv"),cx=cv.getContext("2d"),W=0,H=0,DPR=1,D=null,V={s:1,x:0,y:0},base=null,fit=1,tm,st,
     M=[],sel=null,mode="ver",addMode=false,canEdit=true,DB=null,logado=false,hov=null,drag=null,pts={},g0=null,
-    ED={del:[],add:[],esc:0},selE={},lin=false,tool="sel",box=null,mv=null,off=null,cur=[],mp=[],pilha=[],se;
-var dicas={sel:"Arraste para selecionar uma área (linhas da planta e desenhadas). Toque numa linha desenhada para escolhê-la.",mov:"Com algo selecionado, arraste para mover.",lin:"Toque para marcar pontos. Toque em Linha de novo para concluir.",med:"Toque em dois pontos para medir.",esc:"Toque em dois pontos de distância conhecida."};
+    ED={del:[],add:[],esc:0},selE={},lin=false,tool="sel",box=null,mv=null,off=null,cur=[],mp=[],pilha=[],se,shp=null,pilhaR=[],eu="",dockOn=false,
+    hw=null,sn=null,lastSn=0,ima=true,ort=false,mede=false,perfil="todos",filtro="todos";
+var TIPOS={
+ maq:{n:"Máquina",a:"manut",c:"#0a7ea4",s:"M",y:"MAQUINAS"},
+ hid:{n:"Hidrante",a:"sesmt",c:"#c1121f",s:"H",y:"HIDRANTES"},
+ ext:{n:"Extintor",a:"sesmt",c:"#e85d04",s:"E",y:"EXTINTORES"},
+ man:{n:"Mangueira",a:"sesmt",c:"#7b2cbf",s:"Mg",y:"MANGUEIRAS"},
+ sai:{n:"Saída de emergência",a:"sesmt",c:"#2a9d4a",s:"S",y:"SAIDAS"},
+ pe:{n:"Ponto de encontro",a:"sesmt",c:"#0f766e",s:"P",y:"PONTOS_ENCONTRO"}};
+var dicas={sel:"Arraste para selecionar uma área, ou toque numa linha desenhada para escolhê-la.",mov:"Com algo selecionado, arraste para mover.",lin:"Toque para marcar os pontos. O ímã gruda nos cantos; Reto trava em 0° e 90°. Medida exata digita o comprimento.",ret:"Arraste de um canto ao outro. O tamanho aparece enquanto você arrasta.",cir:"Arraste do centro até a borda. O raio aparece enquanto você arrasta.",med:"Toque nos pontos para medir. Cada trecho mostra a distância e o total soma tudo. Cancelar limpa.",esc:"Toque nas duas pontas de algo que você sabe o tamanho (uma porta de 0,9 m, por exemplo) e digite os metros."};
 function mk(){return new Path2D()}
+function avisoTemp(t){aviso(t);setTimeout(function(){if($("msg").textContent===t)aviso("")},4000)}
 function aviso(t){var m=$("msg");m.textContent=t||"";m.style.display=t?"block":"none"}
 function w2s(x,y){return [V.s*x+V.x,V.y-V.s*y]}
 function s2w(x,y){return [(x-V.x)/V.s,(V.y-y)/V.s]}
@@ -149,10 +203,11 @@ function draw(){
   if(base){var k=V.s/base.s;cx.setTransform(k,0,0,k,DPR*(V.x-k*base.x),DPR*(V.y-k*base.y));cx.drawImage(base.c,0,0)}
   drawED();
   cx.setTransform(DPR,0,0,DPR,0,0);cx.font="600 13px system-ui,sans-serif";cx.textBaseline="middle";
-  M.forEach(function(m){
-    var p=w2s(m.x,m.y),on=m===sel;
-    cx.beginPath();cx.arc(p[0],p[1],on?10:7,0,7);cx.fillStyle=on?"#e4572e":"#0a7ea4";cx.fill();
-    cx.lineWidth=2;cx.strokeStyle="#fff";cx.stroke();
+  VM().forEach(function(m){
+    var p=w2s(m.x,m.y),on=m===sel,T=tipoDe(m);
+    cx.beginPath();cx.arc(p[0],p[1],on?12:9,0,7);cx.fillStyle=T.c;cx.fill();
+    cx.lineWidth=on?3.5:2;cx.strokeStyle=on?"#111827":"#fff";cx.stroke();
+    cx.fillStyle="#fff";cx.font="700 10px system-ui,sans-serif";cx.textAlign="center";cx.fillText(T.s,p[0],p[1]+.5);cx.textAlign="left";cx.font="600 13px system-ui,sans-serif";
     var near=hov&&Math.hypot(hov[0]-p[0],hov[1]-p[1])<40;
     if(on||near||V.s>fit*3){
       var tw=cx.measureText(m.nome).width+14,bx=p[0]-tw/2,by=p[1]-34;
@@ -160,7 +215,97 @@ function draw(){
       cx.fillStyle="#fff";cx.textAlign="center";cx.fillText(m.nome,p[0],by+11);cx.textAlign="left"}
   });
 }
-function usar(d){D=d;base=null;fitView();if(ED.del.length)refazBase();else renderBase();aviso("")}
+function usar(d){D=d;base=null;fitView();if(ED.del.length)refazBase();else renderBase();aviso("");ui()}
+
+// perfis e tipos de ponto
+function area(){return perfil!=="todos"?perfil:filtro}
+function tipoDe(m){return TIPOS[m.t]||TIPOS.maq}
+function vis(m){var a=area();return a==="todos"||tipoDe(m).a===a}
+function VM(){return M.filter(vis)}
+function montaTipos(){
+  var a=area();[$("tipoAdd"),$("tipoSel")].forEach(function(s){
+    var v=s.value;s.innerHTML="";
+    Object.keys(TIPOS).forEach(function(k){if(a!=="todos"&&TIPOS[k].a!==a)return;var o=document.createElement("option");o.value=k;o.textContent=TIPOS[k].n;s.appendChild(o)});
+    if(v&&s.querySelector('option[value="'+v+'"]'))s.value=v})}
+function legenda(){
+  var l=$("leg"),a=area(),v=VM();
+  if(!v.length||(FIREBASE&&!logado)){l.hidden=true;return}
+  l.innerHTML="";
+  Object.keys(TIPOS).forEach(function(k){var T=TIPOS[k];if(a!=="todos"&&T.a!==a)return;
+    var n=v.filter(function(m){return tipoDe(m)===T}).length;if(!n)return;
+    var d=document.createElement("div"),i=document.createElement("i");i.style.background=T.c;d.appendChild(i);d.appendChild(document.createTextNode(T.n+" ("+n+")"));l.appendChild(d)});
+  l.hidden=!l.children.length}
+
+// medidas, ímã e modo reto
+function dist(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1])}
+function fmtD(d){
+  if(ED.esc>0){var m=d*ED.esc;return m<1?Math.round(m*100)+" cm":m.toFixed(2).replace(".",",")+" m"}
+  return d.toFixed(1).replace(".",",")+" un."}
+function fmtA(a){return (a*ED.esc*ED.esc).toFixed(2).replace(".",",")+" m²"}
+function lenIt(it){var p=it.p,t=0,k;
+  if(it.k==="s"){for(k=0;k+3<p.length;k+=4)t+=Math.hypot(p[k+2]-p[k],p[k+3]-p[k+1])}
+  else for(k=2;k+1<p.length;k+=2)t+=Math.hypot(p[k]-p[k-2],p[k+1]-p[k-1]);
+  return t}
+function vtx(){
+  if(!D)return null;if(!D.buf)D.buf=toBIN(D);
+  if(D.vv&&D.vv.b===D.buf)return D.vv;
+  var dv=new DataView(D.buf),hl=dv.getUint32(0,true),h=JSON.parse(new TextDecoder().decode(new Uint8Array(D.buf,4,hl))),o=4+hl,A=[];
+  h.groups.forEach(function(g){o+=4*g.n;A.push(new Int32Array(D.buf,o,g.p*2));o+=8*g.p});
+  return D.vv={b:D.buf,a:A,q:h.q}}
+function snapV(w){
+  var r=12/V.s,bd=r*r,best=null,i,j,k,p,dx,dy,d;
+  ED.add.forEach(function(it){p=it.p;for(k=0;k+1<p.length;k+=2){dx=p[k]-w[0];dy=p[k+1]-w[1];d=dx*dx+dy*dy;if(d<bd){bd=d;best=[p[k],p[k+1]]}}});
+  var B=vtx();
+  if(B){var q=B.q,wx=w[0]*q,wy=w[1]*q,rr=r*q,lim=bd*q*q,a,x,y;
+    for(j=0;j<B.a.length;j++){a=B.a[j];
+      for(i=0;i<a.length;i+=2){dx=a[i]-wx;if(dx>rr||dx<-rr)continue;dy=a[i+1]-wy;d=dx*dx+dy*dy;
+        if(d<lim){x=a[i]/q;y=a[i+1]/q;if(!oculto(ED.del,x,y,x,y)){lim=d;best=[x,y]}}}}}
+  return best}
+function alvo(sx,sy,ref){
+  var w=s2w(sx,sy),h=false;
+  if(ort&&ref){h=Math.abs(w[0]-ref[0])>Math.abs(w[1]-ref[1]);if(h)w[1]=ref[1];else w[0]=ref[0]}
+  sn=null;
+  if(ima){var s=snapV(w);if(s){sn=s;w=[s[0],s[1]];if(ort&&ref){if(h)w[1]=ref[1];else w[0]=ref[0]}}}
+  return w}
+function refPt(){
+  if(tool==="lin"&&cur.length>=2)return [cur[cur.length-2],cur[cur.length-1]];
+  if((tool==="med"||tool==="esc")&&mp.length)return mp[mp.length-1];
+  return null}
+function rot(x,y,t){
+  var p=w2s(x,y);cx.font="600 12px system-ui,sans-serif";cx.textAlign="center";cx.textBaseline="middle";
+  var w=cx.measureText(t).width+12,bx=p[0]-w/2,by=p[1]-26;
+  cx.fillStyle="rgba(13,26,49,.92)";cx.beginPath();cx.roundRect?cx.roundRect(bx,by,w,20,6):cx.rect(bx,by,w,20);cx.fill();
+  cx.fillStyle="#fff";cx.fillText(t,p[0],by+10);cx.textAlign="left"}
+function rotulos(){
+  var P=null,i,d,tot,x1,y1,x2,y2,a,b;
+  if(tool==="lin"&&cur.length>=2){P=[];for(i=0;i<cur.length;i+=2)P.push([cur[i],cur[i+1]]);if(hw)P.push(hw)}
+  else if((tool==="med"||tool==="esc")&&mp.length){P=mp.slice();if(hw&&(tool==="med"||mp.length<2))P.push(hw)}
+  if(P&&P.length>1){tot=0;
+    for(i=1;i<P.length;i++){d=dist(P[i-1],P[i]);tot+=d;
+      if(d>0&&(P.length<30||i>P.length-3))rot((P[i-1][0]+P[i][0])/2,(P[i-1][1]+P[i][1])/2,fmtD(d)+(i===P.length-1&&P.length>2&&tool!=="esc"?" · total "+fmtD(tot):""))}}
+  if(shp){x1=shp[0];y1=shp[1];x2=shp[2];y2=shp[3];
+    if(tool==="ret"&&Math.abs(x2-x1)>.01&&Math.abs(y2-y1)>.01){a=Math.abs(x2-x1);b=Math.abs(y2-y1);rot((x1+x2)/2,Math.max(y1,y2),fmtD(a)+" × "+fmtD(b)+(ED.esc>0?" = "+fmtA(a*b):""))}
+    else if(tool==="cir"){d=dist([x1,y1],[x2,y2]);if(d>.01)rot((x1+x2)/2,(y1+y2)/2,"raio "+fmtD(d)+" · Ø "+fmtD(2*d))}}}
+function barra(){
+  if(!(ED.esc>0))return;
+  var nice=[.1,.2,.5,1,2,5,10,20,50,100,200,500,1000],t=110/V.s*ED.esc,L=nice[0],i;
+  for(i=0;i<nice.length;i++)if(nice[i]<=t)L=nice[i];
+  var px=L/ED.esc*V.s;if(px>W*.6)return;
+  var x0=W-14-px,y=H-16;
+  cx.strokeStyle="#0d1a31";cx.fillStyle="#0d1a31";cx.lineWidth=2;cx.beginPath();cx.moveTo(x0,y-5);cx.lineTo(x0,y);cx.lineTo(x0+px,y);cx.lineTo(x0+px,y-5);cx.stroke();
+  cx.font="600 11px system-ui,sans-serif";cx.textAlign="center";cx.textBaseline="middle";
+  cx.fillText(L<1?Math.round(L*100)+" cm":String(L).replace(".",",")+" m",x0+px/2,y-12);cx.textAlign="left"}
+function medidaMsg(){
+  var n=mp.length,tot=0,i;
+  if(n<2){aviso("Toque no próximo ponto. Cancelar limpa a medição.");return}
+  for(i=1;i<n;i++)tot+=dist(mp[i-1],mp[i]);
+  var a=mp[n-2],b=mp[n-1];
+  aviso("Trecho: "+fmtD(dist(a,b))+" (horizontal "+fmtD(Math.abs(b[0]-a[0]))+", vertical "+fmtD(Math.abs(b[1]-a[1]))+")"+(n>2?" · Total: "+fmtD(tot):"")+(ED.esc>0?"":" · Sem escala: um editor precisa definir em Escala."))}
+function voltaPonto(){
+  if(tool==="lin")cur.splice(-2,2);else mp.pop();
+  if(tool==="med"&&mp.length)medidaMsg();else if(tool==="med")aviso(dicas.med);
+  ui();draw()}
+function cancela(){cur=[];mp=[];box=null;shp=null;selE={};hw=null;sn=null;if(tool==="med"||tool==="esc")aviso(dicas[tool]);ui();draw()}
 
 // edição de linhas
 function js(){return JSON.stringify(ED,function(k,v){return k==="P"?undefined:v})}
@@ -175,22 +320,33 @@ function drawED(){
     if(on&&off){cx.save();cx.translate(off[0],off[1]);cx.stroke(it.P);cx.restore()}else cx.stroke(it.P)});
   cx.strokeStyle="#e4572e";cx.lineWidth=1.6/V.s;
   if(cur.length){cx.beginPath();cx.moveTo(cur[0],cur[1]);for(var i=2;i<cur.length;i+=2)cx.lineTo(cur[i],cur[i+1]);
-    if(hov){var w=s2w(hov[0],hov[1]);cx.lineTo(w[0],w[1])}cx.stroke()}
-  if(mp.length){cx.beginPath();mp.forEach(function(q,i){i?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1]);cx.moveTo(q[0],q[1])});
-    cx.moveTo(mp[0][0],mp[0][1]);if(mp[1])cx.lineTo(mp[1][0],mp[1][1]);cx.stroke()}
+    if(hw)cx.lineTo(hw[0],hw[1]);cx.stroke()}
+  if(shp){var q=formaPts(tool,shp);if(q){cx.setLineDash([6/V.s,4/V.s]);cx.beginPath();for(var j=0;j<q.length;j+=2)j?cx.lineTo(q[j],q[j+1]):cx.moveTo(q[j],q[j+1]);cx.stroke();cx.setLineDash([])}}
+  if(mp.length){var P=mp.slice();if(hw&&(tool==="med"||mp.length<2))P.push(hw);cx.beginPath();P.forEach(function(r,i){i?cx.lineTo(r[0],r[1]):cx.moveTo(r[0],r[1])});cx.stroke()}
   cx.setTransform(DPR,0,0,DPR,0,0);
   if(box){var a=w2s(box[0],box[1]),b=w2s(box[2],box[3]);cx.setLineDash([6,4]);cx.lineWidth=1.5;cx.strokeStyle="#0a7ea4";cx.strokeRect(a[0],a[1],b[0]-a[0],b[1]-a[1]);cx.setLineDash([])}
+  if(lin||mede){
+    mp.forEach(function(r){var s=w2s(r[0],r[1]);cx.beginPath();cx.arc(s[0],s[1],3.5,0,7);cx.fillStyle="#e4572e";cx.fill()});
+    rotulos();
+    if(sn){var s2=w2s(sn[0],sn[1]);cx.beginPath();cx.arc(s2[0],s2[1],8,0,7);cx.lineWidth=2;cx.strokeStyle="#e4572e";cx.stroke()}}
+  barra();
 }
-function snap(){pilha.push(js());if(pilha.length>20)pilha.shift()}
+function snap(){pilha.push(js());if(pilha.length>20)pilha.shift();pilhaR=[]}
 function saveED(){
   var j=js();if(j.length>900000){aviso("Edições grandes demais para salvar. Desfaça ou apague algo.");draw();return}
-  if(DB){clearTimeout(se);se=setTimeout(function(){DB.setDoc(DB.doc(DB.fs,"planta","edicoes"),{j:j,em:Date.now()}).catch(function(){aviso("Sem permissão para salvar as linhas.")})},400)}
+  if(DB){clearTimeout(se);se=setTimeout(function(){DB.setDoc(DB.doc(DB.fs,"planta","edicoes"),{j:j,em:Date.now(),por:eu}).catch(function(){aviso("Sem permissão para salvar as linhas.")})},400)}
   else try{localStorage.setItem("planta_edicoes",j)}catch(e){}
   draw()}
 function refazBase(){if(!D)return;if(!D.buf)D.buf=toBIN(D);D.paths=parseBIN(D.buf,mk,ED.del).paths;renderBase()}
 function aplicaED(a){a.del=a.del||[];a.add=a.add||[];var m=JSON.stringify(a.del)!==JSON.stringify(ED.del);ED=a;selE={};if(m&&D)refazBase();else draw()}
-function desfazer(){if(!pilha.length){aviso("Nada para desfazer.");return}
-  var a=JSON.parse(pilha.pop()),m=JSON.stringify(a.del)!==JSON.stringify(ED.del);ED=a;selE={};if(m)refazBase();saveED()}
+function restaura(a){var m=JSON.stringify(a.del)!==JSON.stringify(ED.del);ED=a;selE={};if(m)refazBase();saveED();ui()}
+function desfazer(){if(!pilha.length){aviso("Nada para desfazer.");return}pilhaR.push(js());restaura(JSON.parse(pilha.pop()))}
+function refazer(){if(!pilhaR.length){aviso("Nada para refazer.");return}pilha.push(js());restaura(JSON.parse(pilhaR.pop()))}
+function formaPts(t,q){
+  var r2=function(v){return Math.round(v*100)/100},x1=q[0],y1=q[1],x2=q[2],y2=q[3],p=[],i;
+  if(t==="ret"){if(Math.abs(x2-x1)<.01||Math.abs(y2-y1)<.01)return null;return [x1,y1,x2,y1,x2,y2,x1,y2,x1,y1].map(r2)}
+  var r=Math.hypot(x2-x1,y2-y1);if(r<.01)return null;
+  for(i=0;i<=48;i++)p.push(r2(x1+r*Math.cos(i*Math.PI/24)),r2(y1+r*Math.sin(i*Math.PI/24)));return p}
 function nsel(){return Object.keys(selE).length}
 function bbox(it){var p=it.p,r=[1e18,1e18,-1e18,-1e18],k;for(k=0;k<p.length;k+=2){if(p[k]<r[0])r[0]=p[k];if(p[k+1]<r[1])r[1]=p[k+1];if(p[k]>r[2])r[2]=p[k];if(p[k+1]>r[3])r[3]=p[k+1]}return r}
 function dseg(w,a,b,c,d){var dx=c-a,dy=d-b,l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((w[0]-a)*dx+(w[1]-b)*dy)/l)):0;return Math.hypot(w[0]-a-t*dx,w[1]-b-t*dy)}
@@ -207,45 +363,66 @@ function caixa(r){
 function apagar(){if(!nsel()){aviso("Selecione algo primeiro.");return}
   snap();ED.add=ED.add.filter(function(_,i){return !selE[i]});selE={};saveED()}
 function fechaLinha(){if(cur.length>=4){snap();ED.add.push({c:"#000000",k:"p",p:cur});saveED()}cur=[]}
-function setTool(t){if(tool==="lin")fechaLinha();tool=t;mp=[];box=null;mv=null;off=null;aviso(dicas[t]);ui();draw()}
+function setTool(t){if(tool==="lin")fechaLinha();tool=t;mp=[];box=null;mv=null;off=null;shp=null;hw=null;sn=null;aviso(dicas[t]);ui();draw()}
 function medida(){
-  var d=Math.hypot(mp[0][0]-mp[1][0],mp[0][1]-mp[1][1]);
-  if(tool==="esc"){var m=parseFloat((prompt("Quantos metros tem essa distância na realidade?")||"").replace(",","."));
-    if(m>0&&d>0){snap();ED.esc=m/d;saveED();aviso("Escala definida. Agora a medida mostra metros.")}}
-  else aviso("Distância: "+(ED.esc?(d*ED.esc).toFixed(2).replace(".",",")+" m":d.toFixed(2).replace(".",",")+" unidades (sem escala: use Escala)"))}
+  var d=dist(mp[0],mp[1]);
+  var m=parseFloat((prompt("Quantos metros tem essa distância na realidade? (ex.: 3,5)")||"").replace(",","."));
+  mp=[];
+  if(m>0&&d>0){snap();ED.esc=m/d;saveED();aviso("Escala definida. Agora as medidas aparecem em metros.")}
+  else aviso("Escala não alterada.")}
 function fimLin(o){
-  var w=s2w(o.x,o.y),r2=function(v){return Math.round(v*100)/100};
+  var r2=function(v){return Math.round(v*100)/100},w;
   if(tool==="sel"){
+    w=s2w(o.x,o.y);
     if(box&&o.mv){var b=box;box=null;caixa([Math.min(b[0],b[2]),Math.min(b[1],b[3]),Math.max(b[0],b[2]),Math.max(b[1],b[3])])}
-    else{box=null;selE={};var i=pega(w);if(i>=0)selE[i]=true}}
+    else{box=null;selE={};var i=pega(w);if(i>=0){selE[i]=true;aviso("Selecionada · comprimento "+fmtD(lenIt(ED.add[i]))+". Use Mover ou Apagar.")}}}
   else if(tool==="mov"){
     if(mv&&off&&o.mv){snap();ED.add.forEach(function(it,i){if(selE[i]){for(var k=0;k<it.p.length;k+=2){it.p[k]=r2(it.p[k]+off[0]);it.p[k+1]=r2(it.p[k+1]+off[1])}delete it.P}});saveED()}
     mv=null;off=null}
+  else if(tool==="ret"||tool==="cir"){
+    if(shp&&o.mv){var e=alvo(o.x,o.y,null);shp[2]=e[0];shp[3]=e[1];var q=formaPts(tool,shp);if(q){snap();ED.add.push({c:"#000000",k:"p",p:q});saveED()}}
+    shp=null;sn=null}
   else if(!o.mv){
+    w=alvo(o.x,o.y,refPt());
     if(tool==="lin")cur.push(r2(w[0]),r2(w[1]));
-    else{if(mp.length>1)mp=[];mp.push(w);if(mp.length===2)medida()}}
+    else{
+      if(tool==="esc"&&mp.length>1)mp=[];
+      mp.push(w);
+      if(tool==="esc"){if(mp.length===2)medida();else aviso("Agora toque na outra ponta.")}
+      else medidaMsg()}}
 }
 
 // máquinas
 function hit(x,y){
-  for(var i=M.length-1;i>=0;i--){var p=w2s(M[i].x,M[i].y);if(Math.hypot(p[0]-x,p[1]-y)<20)return M[i]}
+  var A=VM();for(var i=A.length-1;i>=0;i--){var p=w2s(A[i].x,A[i].y);if(Math.hypot(p[0]-x,p[1]-y)<20)return A[i]}
   return null}
 function editando(){return canEdit&&mode==="editar"}
 function ui(){
+  var tdo=perfil==="todos",ctx=(lin||mede)&&((tool==="lin"&&cur.length>0)||((tool==="med"||tool==="esc")&&mp.length>0));
   $("bLogin").hidden=!FIREBASE;$("bEdit").hidden=!canEdit;$("bEdit").textContent=mode==="editar"?"Concluir":"Editar";
-  $("bAdd").hidden=!editando();$("bLin").hidden=!canEdit;$("bLin").textContent=lin?"Concluir linhas":"Editar linhas";$("bar2").hidden=!lin;
-  ["sel","mov","lin","med","esc"].forEach(function(t){$("t"+t[0].toUpperCase()+t.slice(1)).classList.toggle("on",tool===t)});$("bSend").hidden=!(FIREBASE&&canEdit);$("bAdd").classList.toggle("on",addMode);
+  $("bLin").hidden=!(canEdit&&tdo);$("bLin").textContent=lin?"Concluir linhas":"Editar linhas";
+  $("bMed").hidden=!D;$("bMed").textContent=mede?"Fechar medição":"Medir";
+  $("ver").hidden=!tdo||(!!FIREBASE&&!logado);$("perfilTag").hidden=tdo;$("perfilTag").textContent=perfil==="sesmt"?"Visão SESMT":"Visão Manutenção";
+  $("dock").hidden=!(lin||mede||editando());$("gMaq").hidden=!editando();$("gLin").hidden=!lin;$("gOpt").hidden=!(lin||mede);$("tFim").hidden=!mede;$("gCtx").hidden=!ctx;
+  $("tOk").hidden=tool!=="lin";$("tLen").hidden=!(tool==="lin"&&cur.length>=2);$("tBk").hidden=tool==="esc";$("tCnT").textContent=tool==="lin"?"Cancelar":"Limpar";
+  ["sel","mov","lin","ret","cir","med","esc"].forEach(function(t){$("t"+t[0].toUpperCase()+t.slice(1)).classList.toggle("on",tool===t)});
+  $("tIma").classList.toggle("on",ima);$("tOrt").classList.toggle("on",ort);
+  $("tUnd").disabled=!pilha.length;$("tRef").disabled=!pilhaR.length;
+  var dk=!$("dock").hidden;if(dk!==dockOn){dockOn=dk;setTimeout(function(){size();if(D){base=null;renderBase()}else draw()},0)}
+  $("bSend").hidden=!(FIREBASE&&canEdit&&tdo);$("bAdd").classList.toggle("on",addMode);
   $("sel").hidden=!sel;
-  if(sel){$("nome").value=sel.nome;$("nome").readOnly=!editando();$("bDel").hidden=!editando()}
+  if(sel){$("nome").value=sel.nome;$("nome").readOnly=!editando();$("tipoSel").value=sel.t||"maq";$("tipoSel").disabled=!editando();$("bDel").hidden=!editando()}
 }
 function lista(){
-  var s=$("lista");s.innerHTML="<option value=''>Buscar máquina…</option>";
-  M.slice().sort(function(a,b){return a.nome.localeCompare(b.nome)}).forEach(function(m){
-    var o=document.createElement("option");o.value=m.id;o.textContent=m.nome;s.appendChild(o)});
+  var s=$("lista"),a=area(),o0=document.createElement("option");
+  s.innerHTML="";o0.value="";o0.textContent=a==="sesmt"?"Buscar hidrante, extintor…":a==="manut"?"Buscar máquina…":"Buscar…";s.appendChild(o0);
+  VM().sort(function(x,y){return x.nome.localeCompare(y.nome)}).forEach(function(m){
+    var o=document.createElement("option");o.value=m.id;o.textContent=a==="todos"?m.nome+" · "+tipoDe(m).n:m.nome;s.appendChild(o)});
+  legenda();
 }
 function save(){
   if(DB){clearTimeout(st);st=setTimeout(function(){
-    DB.setDoc(DB.doc(DB.fs,"planta","maquinas"),{lista:M,em:Date.now()}).catch(function(){aviso("Sem permissão para salvar.")})},400)}
+    DB.setDoc(DB.doc(DB.fs,"planta","maquinas"),{lista:M,em:Date.now(),por:eu}).catch(function(){aviso("Sem permissão para salvar.")})},400)}
   else try{localStorage.setItem("planta_maquinas",JSON.stringify(M))}catch(e){}
 }
 function escolher(m){sel=m;ui();draw()}
@@ -258,17 +435,19 @@ cv.addEventListener("pointerdown",function(e){
   cv.setPointerCapture(e.pointerId);var p=pos(e);pts[e.pointerId]={x:p[0],y:p[1],x0:p[0],y0:p[1],mv:false};
   var ids=Object.keys(pts);
   if(ids.length===1){
-    if(lin){var w0=s2w(p[0],p[1]);if(tool==="sel")box=[w0[0],w0[1],w0[0],w0[1]];else if(tool==="mov"&&nsel())mv=w0;drag=null}
+    if(lin||mede){var w0=s2w(p[0],p[1]);if(tool==="sel")box=[w0[0],w0[1],w0[0],w0[1]];else if(tool==="mov"&&nsel())mv=w0;else if(tool==="ret"||tool==="cir"){var ws=alvo(p[0],p[1],null);shp=[ws[0],ws[1],ws[0],ws[1]]}drag=null}
     else{var h=editando()?hit(p[0],p[1]):null;drag=h||null;if(drag)sel=drag}}
-  else{drag=null;box=null;mv=null;var a=pts[ids[0]],b=pts[ids[1]];g0={d:Math.hypot(a.x-b.x,a.y-b.y),s:V.s,x:V.x,y:V.y,mx:(a.x+b.x)/2,my:(a.y+b.y)/2}}
+  else{drag=null;box=null;mv=null;shp=null;var a=pts[ids[0]],b=pts[ids[1]];g0={d:Math.hypot(a.x-b.x,a.y-b.y),s:V.s,x:V.x,y:V.y,mx:(a.x+b.x)/2,my:(a.y+b.y)/2}}
 });
 cv.addEventListener("pointermove",function(e){
-  var p=pos(e);hov=p;var o=pts[e.pointerId],ids=Object.keys(pts);
+  var p=pos(e);hov=p;var o=pts[e.pointerId],ids=Object.keys(pts),upd=false;
+  if((lin||mede)&&(tool==="lin"||tool==="med"||tool==="esc"||tool==="ret"||tool==="cir")){var nw=Date.now();if(nw-lastSn>=40){lastSn=nw;upd=true;hw=alvo(p[0],p[1],refPt())}}
   if(!o){draw();return}
   var dx=p[0]-o.x,dy=p[1]-o.y;o.x=p[0];o.y=p[1];if(Math.hypot(p[0]-o.x0,p[1]-o.y0)>6)o.mv=true;
   if(ids.length===1){
     if(drag&&o.mv){var w=s2w(p[0],p[1]);drag.x=Math.round(w[0]*100)/100;drag.y=Math.round(w[1]*100)/100}
     else if(box){var w1=s2w(p[0],p[1]);box[2]=w1[0];box[3]=w1[1]}
+    else if(shp){var w3=upd?hw:s2w(p[0],p[1]);shp[2]=w3[0];shp[3]=w3[1]}
     else if(mv){var w2=s2w(p[0],p[1]);off=[w2[0]-mv[0],w2[1]-mv[1]]}
     else if(!drag){V.x+=dx;V.y+=dy;later()}
   }else if(ids.length===2&&g0){
@@ -279,21 +458,22 @@ cv.addEventListener("pointermove",function(e){
 function fim(e){
   var o=pts[e.pointerId];if(!o)return;delete pts[e.pointerId];g0=null;
   if(Object.keys(pts).length)return;
-  if(lin){fimLin(o);drag=null;ui();draw();return}
+  if(lin||mede){fimLin(o);drag=null;ui();draw();return}
   if(drag&&o.mv){save();lista()}
   else if(!o.mv){
     var h=hit(o.x,o.y);
     if(h)escolher(h);
     else if(addMode&&editando()){
-      var n=prompt("Nome da máquina?");
-      if(n&&n.trim()){var w=s2w(o.x,o.y),m={id:Date.now().toString(36),nome:n.trim(),x:Math.round(w[0]*100)/100,y:Math.round(w[1]*100)/100};
-        M.push(m);addMode=false;save();lista();escolher(m)}}
+      var tp=$("tipoAdd").value||"maq",T=TIPOS[tp],cnt=M.filter(function(x){return (x.t||"maq")===tp}).length+1,
+          n=prompt("Nome? ("+T.n+")",T.n+" "+(cnt<10?"0":"")+cnt);
+      if(n&&n.trim()){var w=s2w(o.x,o.y),m={id:Date.now().toString(36),nome:n.trim(),t:tp,x:Math.round(w[0]*100)/100,y:Math.round(w[1]*100)/100};
+        M.push(m);save();lista();escolher(m);aviso("Adicionado. Toque em outro lugar para adicionar mais, ou em Adicionar para parar.")}}
     else if(sel){sel=null;ui();draw()}
   }
   drag=null;ui();draw();
 }
 cv.addEventListener("pointerup",fim);cv.addEventListener("pointercancel",fim);
-cv.addEventListener("pointerleave",function(e){if(e.pointerType==="mouse"){hov=null;draw()}});
+cv.addEventListener("pointerleave",function(e){if(e.pointerType==="mouse"){hov=null;hw=null;sn=null;draw()}});
 cv.addEventListener("wheel",function(e){e.preventDefault();var p=pos(e);zoomEm(p[0],p[1],Math.exp(-e.deltaY*0.0015));draw();later()},{passive:false});
 window.addEventListener("resize",function(){size();if(D){base=null;fitView();renderBase()}});
 
@@ -301,28 +481,60 @@ window.addEventListener("resize",function(){size();if(D){base=null;fitView();ren
 $("lista").onchange=function(){
   var m=M.filter(function(x){return x.id===this.value},this)[0];if(!m)return;
   V.s=Math.max(V.s,fit*4);V.x=W/2-V.s*m.x;V.y=H/2+V.s*m.y;escolher(m);renderBase()};
-$("bEdit").onclick=function(){lin=false;mode=mode==="editar"?"ver":"editar";addMode=false;ui();draw()};
-$("bLin").onclick=function(){lin=!lin;if(lin){mode="ver";addMode=false;sel=null;tool="sel";aviso(dicas.sel)}else{fechaLinha();aviso("")}mp=[];cur=[];box=null;selE={};ui();draw()};
-["sel","mov","lin","med","esc"].forEach(function(t){$("t"+t[0].toUpperCase()+t.slice(1)).onclick=function(){setTool(t)}});
-$("tDel").onclick=apagar;$("tUnd").onclick=desfazer;
-$("bAdd").onclick=function(){addMode=!addMode;ui();aviso(addMode?"Toque no ponto da planta onde fica a máquina.":"")};
+function limpaEstado(){cur=[];mp=[];box=null;shp=null;mv=null;off=null;hw=null;sn=null;selE={}}
+$("bEdit").onclick=function(){if(lin)fechaLinha();lin=false;mede=false;limpaEstado();mode=mode==="editar"?"ver":"editar";addMode=false;ui();draw()};
+$("bLin").onclick=function(){lin=!lin;mede=false;limpaEstado();if(lin){mode="ver";addMode=false;sel=null;tool="sel";aviso(dicas.sel)}else{aviso("")}ui();draw()};
+$("bMed").onclick=function(){
+  var abrir=!mede;if(lin)fechaLinha();lin=false;limpaEstado();mede=abrir;
+  if(abrir){mode="ver";addMode=false;sel=null;tool="med";aviso(dicas.med)}else aviso("");
+  ui();draw()};
+$("tFim").onclick=function(){$("bMed").onclick()};
+["sel","mov","lin","ret","cir","med","esc"].forEach(function(t){$("t"+t[0].toUpperCase()+t.slice(1)).onclick=function(){setTool(t)}});
+$("tDel").onclick=function(){apagar();ui()};$("tUnd").onclick=desfazer;$("tRef").onclick=refazer;
+$("tOk").onclick=function(){fechaLinha();ui();draw()};
+$("tBk").onclick=voltaPonto;
+$("tCn").onclick=cancela;
+$("tIma").onclick=function(){ima=!ima;sn=null;ui();draw()};
+$("tOrt").onclick=function(){ort=!ort;ui();draw()};
+$("tLen").onclick=function(){
+  if(tool!=="lin"||cur.length<2)return;
+  var a=[cur[cur.length-2],cur[cur.length-1]],t=hw||a,dx=t[0]-a[0],dy=t[1]-a[1],n=Math.hypot(dx,dy);
+  if(n<1e-9){aviso("Aponte a direção primeiro: passe o mouse ou toque no mapa para onde a linha vai.");return}
+  var v=parseFloat((prompt("Comprimento deste trecho em "+(ED.esc>0?"metros":"unidades do desenho")+"? (ex.: 4,5)")||"").replace(",","."));
+  if(!(v>0))return;
+  var L=ED.esc>0?v/ED.esc:v,r2=function(z){return Math.round(z*100)/100};
+  cur.push(r2(a[0]+dx/n*L),r2(a[1]+dy/n*L));ui();draw()};
+$("ver").onchange=function(){filtro=this.value;sel=null;addMode=false;montaTipos();lista();ui();draw()};
+$("tipoSel").onchange=function(){if(sel&&editando()){sel.t=this.value;save();lista();draw()}};
+$("bAdd").onclick=function(){addMode=!addMode;ui();aviso(addMode?"Toque no ponto da planta para adicionar: "+TIPOS[$("tipoAdd").value||"maq"].n+".":"")};
+document.addEventListener("keydown",function(e){
+  var t=e.target.tagName||"";if(t==="INPUT"||t==="SELECT"||t==="TEXTAREA"||!(lin||mede))return;
+  var k=(e.key||"").toLowerCase(),c=e.ctrlKey||e.metaKey;
+  if(c&&k==="z"&&lin){e.preventDefault();if(e.shiftKey)refazer();else desfazer()}
+  else if(c&&k==="y"&&lin){e.preventDefault();refazer()}
+  else if(k==="escape")cancela();
+  else if(k==="enter"&&tool==="lin"){fechaLinha();ui();draw()}
+  else if(k==="backspace"&&(cur.length||mp.length)){e.preventDefault();voltaPonto()}
+  else if(k==="o"){ort=!ort;ui();draw()}
+  else if(k==="i"){ima=!ima;sn=null;ui();draw()}
+});
 $("bOk").onclick=function(){sel=null;ui();draw()};
 $("bDel").onclick=function(){if(sel&&confirm("Excluir "+sel.nome+"?")){M=M.filter(function(m){return m!==sel});sel=null;save();lista();ui();draw()}};
 $("nome").oninput=function(){if(sel&&editando()){sel.nome=this.value;save();draw()}};
 $("nome").onchange=lista;
 $("bOpen").onclick=function(){$("fil").click()};
 function baixar(nome,txt,tipo){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:tipo}));a.download=nome;a.click()}
-$("bJson").onclick=function(){baixar("maquinas.json",JSON.stringify(M,null,1),"application/json")};
+$("bJson").onclick=function(){baixar("maquinas.json",JSON.stringify(VM(),null,1),"application/json")};
 $("bDxf").onclick=function(){
   var s="0\nSECTION\n2\nENTITIES\n";
-  M.forEach(function(m){s+="0\nCIRCLE\n8\nMAQUINAS\n10\n"+m.x+"\n20\n"+m.y+"\n30\n0\n40\n2\n0\nTEXT\n8\nMAQUINAS\n10\n"+(m.x+3)+"\n20\n"+m.y+"\n30\n0\n40\n2\n1\n"+m.nome+"\n"});
+  VM().forEach(function(m){var ly=tipoDe(m).y;s+="0\nCIRCLE\n8\n"+ly+"\n10\n"+m.x+"\n20\n"+m.y+"\n30\n0\n40\n2\n0\nTEXT\n8\n"+ly+"\n10\n"+(m.x+3)+"\n20\n"+m.y+"\n30\n0\n40\n2\n1\n"+m.nome+"\n"});
   ED.add.forEach(function(it){var p=it.p,st=it.k==="s"?4:2,k;for(k=0;k+3<p.length;k+=st)s+="0\nLINE\n8\nEDICAO\n10\n"+p[k]+"\n20\n"+p[k+1]+"\n30\n0\n11\n"+p[k+2]+"\n21\n"+p[k+3]+"\n31\n0\n"});
   baixar("maquinas.dxf",s+"0\nENDSEC\n0\nEOF\n","application/dxf")};
 $("fil").onchange=async function(){
   var f=this.files[0];this.value="";if(!f)return;var n=f.name.toLowerCase();
   try{
     if(n.endsWith(".json")){
-      if(!canEdit){aviso("Só quem edita pode importar máquinas.");return}
+      if(!canEdit||perfil!=="todos"){aviso("Só quem edita tudo pode importar o backup.");return}
       var j=JSON.parse(await f.text());M=Array.isArray(j)?j:(j.maquinas||[]);save();lista();draw();return}
     aviso("Lendo "+f.name+"… arquivos grandes podem demorar.");
     await new Promise(function(r){setTimeout(r,40)});
@@ -367,21 +579,27 @@ async function iniciaFirebase(){
     else Au.signInWithPopup(auth,new Au.GoogleAuthProvider()).catch(function(e){aviso("Não foi possível entrar ("+(e.code||e.message)+").")})};
   Au.onAuthStateChanged(auth,async function(u){
     if(unsub){unsub();unsub=null}
-    M=[];canEdit=false;mode="ver";sel=null;D=null;base=null;ED={del:[],add:[],esc:0};selE={};lin=false;lista();ui();draw();
+    M=[];canEdit=false;mode="ver";sel=null;D=null;base=null;ED={del:[],add:[],esc:0};selE={};lin=false;mede=false;addMode=false;cur=[];mp=[];perfil="todos";filtro="todos";$("ver").value="todos";montaTipos();lista();ui();draw();
     logado=!!u;$("bLogin").textContent=u?"Sair":"Entrar com Google";
     if(!u){aviso("Entre com o Google para ver as máquinas.");return}
-    var mail=(u.email||"").toLowerCase();
-    try{var a=await F.getDoc(F.doc(fs,"config","acesso"));
-      canEdit=(a.data().editores||[]).map(function(x){return x.toLowerCase()}).indexOf(mail)>-1}
+    var mail=(u.email||"").toLowerCase();eu=mail;
+    try{var a=await F.getDoc(F.doc(fs,"config","acesso")),d0=a.data(),
+        lc=function(l){return (l||[]).map(function(x){return String(x).toLowerCase()})},
+        sS=lc(d0.sesmt).indexOf(mail)>-1,sM=lc(d0.manutencao).indexOf(mail)>-1;
+      canEdit=lc(d0.editores).indexOf(mail)>-1;
+      perfil=sS&&!sM?"sesmt":sM&&!sS?"manut":"todos";montaTipos();lista()}
     catch(e){aviso("Sem acesso. Peça ao dono para liberar o e-mail "+mail+".");return}
     aviso("");
     carregaDesenho().catch(function(){aviso("Não consegui carregar a planta.")});
+    var v1=false,v2=false;
     var u1=F.onSnapshot(F.doc(fs,"planta","maquinas"),function(s){
       if(s.metadata.hasPendingWrites||drag)return;
+      if(s.exists()&&s.data().por&&s.data().por!==eu&&v1)avisoTemp("Máquinas atualizadas por "+s.data().por);v1=true;
       M=s.exists()?(s.data().lista||[]):[];lista();draw()},
       function(){aviso("Sem acesso aos dados.")});
     var u2=F.onSnapshot(F.doc(fs,"planta","edicoes"),function(s){
       if(s.metadata.hasPendingWrites)return;
+      var d2=s.exists()?s.data():null;if(d2&&d2.por&&d2.por!==eu&&v2)avisoTemp("Linhas atualizadas por "+d2.por);v2=true;
       try{aplicaED(s.exists()?JSON.parse(s.data().j):{del:[],add:[],esc:0})}catch(e){}},function(){});
     unsub=function(){u1();u2()};
     ui();
@@ -389,6 +607,7 @@ async function iniciaFirebase(){
 }
 
 // início
+montaTipos();
 size();
 if(FIREBASE){iniciaFirebase().catch(function(){aviso("Erro ao iniciar o login.")});aviso("Entre com o Google para ver as máquinas.")}
 else{try{M=JSON.parse(localStorage.getItem("planta_maquinas")||"[]")}catch(e){M=[]}
