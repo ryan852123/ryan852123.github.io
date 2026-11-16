@@ -251,10 +251,10 @@ async function enviar(){
   aviso("Enviando a planta…");
   try{
     var u=new Uint8Array(D.buf||toBIN(D)),C=700000,n=Math.ceil(u.length/C),i;
-    for(i=0;i<n;i++)await DB.setDoc(DB.doc(DB.fs,"planta","desenho_"+i),{b:DB.Bytes.fromUint8Array(u.slice(i*C,(i+1)*C))});
+    for(i=0;i<n;i++){aviso("Enviando a planta… parte "+(i+1)+" de "+n);await DB.setDoc(DB.doc(DB.fs,"planta","desenho_"+i),{b:DB.Bytes.fromUint8Array(u.slice(i*C,(i+1)*C))})}
     await DB.setDoc(DB.doc(DB.fs,"planta","desenho"),{n:n,em:Date.now()});
-    aviso("Planta guardada ("+n+" partes).");setTimeout(function(){aviso("")},3000)
-  }catch(e){aviso("Não consegui enviar. Confira se o seu e-mail está em editores.")}
+    aviso("Planta guardada no servidor ("+n+" partes). Pode sair e entrar para conferir.")
+  }catch(e){aviso("Não consegui enviar ("+(e.code||e.message)+"). Confira se o seu e-mail está em editores.")}
 }
 $("bSend").onclick=enviar;
 async function carregaDesenho(){
