@@ -81,7 +81,8 @@ dialog input{width:100%}
   <button id="bSend" hidden>Enviar planta</button>
   <button id="bHist" hidden>Histórico</button>
   <button id="bCsv" hidden>Relatório CSV</button>
-  <button id="bDxf">Exportar DXF</button>
+  <button id="bDxf">Pontos em DXF</button>
+  <button id="bFull">Planta completa DXF</button>
   <button id="bJson">Backup JSON</button>
 </header>
 <div id="stage"><canvas id="cv"></canvas><div id="leg" hidden></div><div id="toast" hidden role="status"><span id="toastT"></span><button id="toastB"></button></div><div id="msg" role="status"></div></div>
@@ -189,21 +190,34 @@ function parseDXF(t,mk){
   return {paths:P,texts:T,b:b,raw:Rw};
 }
 function ins(r,x,y){return x>=r[0]&&x<=r[2]&&y>=r[1]&&y<=r[3]}
-function oculto(d,a,b,c,e){for(var i=0;i<d.length;i++){var r=d[i];if(ins(r,a,b)&&ins(r,c,e))return true}return false}
-function parseBIN(buf,mk,del,box){
-  var dv=new DataView(buf),hl=dv.getUint32(0,true),h=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,hl))),o=4+hl,P={},q=h.q,ext={},cnt=0,nd=del&&del.length;
-  h.groups.forEach(function(g){
-    var lens=new Uint32Array(buf,o,g.n);o+=4*g.n;var pts=new Int32Array(buf,o,g.p*2);o+=8*g.p;
-    var p=mk(),k=0,i,j,px,py,pen;
-    for(i=0;i<g.n;i++){pen=false;for(j=0;j<lens[i];j++,k+=2){var x=pts[k]/q,y=pts[k+1]/q;
+function aplica(ops,a,b,c,e){
+  for(var i=0;i<ops.length;i++){var o=ops[i];
+    if(ins(o.r,a,b)&&ins(o.r,c,e)){if(o.x)return null;a+=o.dx;b+=o.dy;c+=o.dx;e+=o.dy}}
+  return [a,b,c,e]}
+function lerGrupos(buf,fn){
+  var dv=new DataView(buf),hl=dv.getUint32(0,true),h=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,4,hl))),o=4+hl,q=h.q;
+  h.groups.forEach(function(g){var lens=new Uint32Array(buf,o,g.n);o+=4*g.n;var pts=new Int32Array(buf,o,g.p*2);o+=8*g.p;fn(g,lens,pts,q)});
+  return h}
+function parseBIN(buf,mk,ops,box){
+  var P={},cnt=0,nd=ops&&ops.length,hp=box?mk():null;
+  var h=lerGrupos(buf,function(g,lens,pts,q){
+    var p=mk(),k=0,i,j,px,py;
+    for(i=0;i<g.n;i++)for(j=0;j<lens[i];j++,k+=2){var x=pts[k]/q,y=pts[k+1]/q;
       if(!box&&!nd)j?p.lineTo(x,y):p.moveTo(x,y);
-      else if(j){var hid=nd&&oculto(del,px,py,x,y);
-        if(box){if(!hid&&ins(box,px,py)&&ins(box,x,y)){(ext[g.c]||(ext[g.c]=[])).push(px,py,x,y);cnt++}}
-        else if(!hid){if(!pen)p.moveTo(px,py);p.lineTo(x,y);pen=true}else pen=false}
-      px=x;py=y}}
+      else if(j){var sg=nd?aplica(ops,px,py,x,y):[px,py,x,y];
+        if(sg){if(box){if(ins(box,sg[0],sg[1])&&ins(box,sg[2],sg[3])){hp.moveTo(sg[0],sg[1]);hp.lineTo(sg[2],sg[3]);cnt++}}
+          else{p.moveTo(sg[0],sg[1]);p.lineTo(sg[2],sg[3])}}}
+      px=x;py=y}
     P[g.c]=p});
-  return {paths:P,texts:h.texts,b:h.bounds,buf:buf,ext:ext,n:cnt};
+  return {paths:P,texts:h.texts,b:h.bounds,buf:buf,hp:hp,n:cnt};
 }
+function eachSeg(buf,ops,fn){
+  var nd=ops&&ops.length;
+  return lerGrupos(buf,function(g,lens,pts,q){
+    var k=0,i,j,px,py;
+    for(i=0;i<g.n;i++)for(j=0;j<lens[i];j++,k+=2){var x=pts[k]/q,y=pts[k+1]/q;
+      if(j){var sg=nd?aplica(ops,px,py,x,y):[px,py,x,y];if(sg)fn(g.c,sg[0],sg[1],sg[2],sg[3])}
+      px=x;py=y}})}
 function toBIN(d){
   var cs=Object.keys(d.raw),hb=new TextEncoder().encode(JSON.stringify({q:100,bounds:d.b,texts:d.texts,groups:cs.map(function(c){return {c:c,n:d.raw[c].lens.length,p:d.raw[c].pts.length/2}})})),
       hl=Math.ceil(hb.length/4)*4,tot=4+hl;
@@ -273,10 +287,10 @@ function draw(){
       cx.fillStyle="#fff";cx.textAlign="center";cx.fillText(rt(m),p[0],by+11);cx.textAlign="left"}
   });
 }
-function usar(d){D=d;base=null;fitView();if(ED.del.length)refazBase();else renderBase();aviso("");ui()}
+function usar(d){D=d;base=null;fitView();if(opsAll().length)refazBase();else renderBase();aviso("");ui()}
 
 // diálogos, avisos e estado de salvamento
-var ckey="",vE=0,vM=0,dE=false,dM=false,errSv=false,tt,Mb={},migrando=false;
+var ckey="",vE=0,vM=0,dE=false,dM=false,errSv=false,tt,Mb={},migrando=false,selR=null,selP=null,selN=0,podeBaixar=true;
 function dialogo(t,msg,rot,val,ok,dec){
   var d=$("dlg"),i=$("dlgI");
   if(d.open)return Promise.resolve(null);
@@ -449,7 +463,7 @@ function voltaPonto(){
   if(tool==="lin")cur.splice(-2,2);else mp.pop();
   if(tool==="med"&&mp.length)medidaMsg();else if(tool==="med")aviso(dicas.med);
   ui();draw()}
-function cancela(){cur=[];mp=[];box=null;shp=null;selE={};hw=null;sn=null;if(tool==="med"||tool==="esc")aviso(dicas[tool]);ui();draw()}
+function cancela(){cur=[];mp=[];box=null;shp=null;limpaSel();hw=null;sn=null;if(tool==="med"||tool==="esc")aviso(dicas[tool]);ui();draw()}
 
 // edição de linhas
 function js(){return JSON.stringify(ED,function(k,v){return k==="P"?undefined:v})}
@@ -462,6 +476,7 @@ function drawED(){
   ED.add.forEach(function(it,i){var on=selE[i];cx.strokeStyle=on?"#e4572e":it.c;cx.lineWidth=(on?2.4:1.4)/V.s;
     if(!it.P)it.P=pathDe(it);
     if(on&&off){cx.save();cx.translate(off[0],off[1]);cx.stroke(it.P);cx.restore()}else cx.stroke(it.P)});
+  if(selP){cx.strokeStyle="#e4572e";cx.lineWidth=2/V.s;if(off){cx.save();cx.translate(off[0],off[1]);cx.stroke(selP);cx.restore()}else cx.stroke(selP)}
   cx.strokeStyle="#e4572e";cx.lineWidth=1.6/V.s;
   if(cur.length){cx.beginPath();cx.moveTo(cur[0],cur[1]);for(var i=2;i<cur.length;i+=2)cx.lineTo(cur[i],cur[i+1]);
     if(hw)cx.lineTo(hw[0],hw[1]);cx.stroke()}
@@ -486,12 +501,12 @@ function saveED(){
   if(DB){var my=++vE;dE=true;sv();clearTimeout(se);se=setTimeout(function(){DB.setDoc(DB.doc(DB.fs,"planta","edicoes"),{j:j,em:Date.now(),por:eu}).then(function(){if(my===vE)dE=false;errSv=false;sv()}).catch(function(){errSv=true;sv();aviso("Sem permissão para salvar as linhas.")})},400)}
   else try{localStorage.setItem("planta_edicoes",j)}catch(e){}
   draw()}
-function refazBase(){if(!D)return;if(!D.buf)D.buf=toBIN(D);D.paths=parseBIN(D.buf,mk,ED.del).paths;renderBase()}
-function aplicaED(a){a.del=a.del||[];a.add=a.add||[];var m=JSON.stringify(a.del)!==JSON.stringify(ED.del);ED=a;selE={};if(m&&D)refazBase();else draw()}
+function refazBase(){if(!D)return;if(!D.buf)D.buf=toBIN(D);D.paths=parseBIN(D.buf,mk,opsAll()).paths;renderBase()}
+function aplicaED(a){a.del=a.del||[];a.add=a.add||[];a.ops=a.ops||[];var m=JSON.stringify([a.del,a.ops])!==JSON.stringify([ED.del,ED.ops||[]]);ED=a;limpaSel();if(m&&D)refazBase();else draw()}
 function restaura(a){
   var e=a.e;e.del=e.del||[];e.add=e.add||[];
-  var m=JSON.stringify(e.del)!==JSON.stringify(ED.del);
-  ED=e;M=a.m||[];selE={};sel=null;ckey="";
+  var m=JSON.stringify([e.del,e.ops||[]])!==JSON.stringify([ED.del,ED.ops||[]]);
+  ED=e;M=a.m||[];limpaSel();sel=null;ckey="";
   if(m)refazBase();saveED();save();lista();ui();draw()}
 function desfazer(){if(!pilha.length){avisoTemp("Nada para desfazer.");return}pilhaR.push(hist());restaura(JSON.parse(pilha.pop()));toast("Desfeito","Refazer",refazer)}
 function refazer(){if(!pilhaR.length){avisoTemp("Nada para refazer.");return}pilha.push(hist());restaura(JSON.parse(pilhaR.pop()));toast("Refeito","Desfazer",desfazer)}
@@ -500,21 +515,21 @@ function formaPts(t,q){
   if(t==="ret"){if(Math.abs(x2-x1)<.01||Math.abs(y2-y1)<.01)return null;return [x1,y1,x2,y1,x2,y2,x1,y2,x1,y1].map(r2)}
   var r=Math.hypot(x2-x1,y2-y1);if(r<.01)return null;
   for(i=0;i<=48;i++)p.push(r2(x1+r*Math.cos(i*Math.PI/24)),r2(y1+r*Math.sin(i*Math.PI/24)));return p}
-function nsel(){return Object.keys(selE).length}
+function nsel(){return Object.keys(selE).length+(selR?1:0)}
+function limpaSel(){selE={};selR=null;selP=null;selN=0}
+function opsAll(){return ED.del.map(function(r){return {r:r,x:1}}).concat(ED.ops||[])}
 function bbox(it){var p=it.p,r=[1e18,1e18,-1e18,-1e18],k;for(k=0;k<p.length;k+=2){if(p[k]<r[0])r[0]=p[k];if(p[k+1]<r[1])r[1]=p[k+1];if(p[k]>r[2])r[2]=p[k];if(p[k+1]>r[3])r[3]=p[k+1]}return r}
 function dseg(w,a,b,c,d){var dx=c-a,dy=d-b,l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((w[0]-a)*dx+(w[1]-b)*dy)/l)):0;return Math.hypot(w[0]-a-t*dx,w[1]-b-t*dy)}
 function pega(w){var best=-1,bd=14/V.s;
   ED.add.forEach(function(it,i){var p=it.p,st=it.k==="s"?4:2,k;for(k=0;k+3<p.length;k+=st){var d=dseg(w,p[k],p[k+1],p[k+2],p[k+3]);if(d<bd){bd=d;best=i}}});return best}
 function caixa(r){
-  var i,e;selE={};
-  if(D){if(!D.buf)D.buf=toBIN(D);e=parseBIN(D.buf,mk,ED.del,r);
-    if(e.n>30000){aviso("Área grande demais ("+e.n+" segmentos). Selecione uma região menor.");return}}
-  snap();
+  var e;limpaSel();
   ED.add.forEach(function(it,i){var b=bbox(it);if(b[0]>=r[0]&&b[1]>=r[1]&&b[2]<=r[2]&&b[3]<=r[3])selE[i]=true});
-  if(e&&e.n){for(var c in e.ext){ED.add.push({c:c,k:"s",p:e.ext[c]});selE[ED.add.length-1]=true}ED.del.push(r);refazBase()}
-  saveED();aviso(nsel()?"Selecionado. Use Mover ou Apagar.":"Nada nessa área.")}
+  if(D){if(!D.buf)D.buf=toBIN(D);e=parseBIN(D.buf,mk,opsAll(),r);if(e.n){selR=r;selP=e.hp;selN=e.n}}
+  aviso(nsel()?"Selecionado"+(selN?" ("+selN+" linhas da planta)":"")+". Use Mover ou Apagar.":"Nada nessa área.");draw()}
 function apagar(){if(!nsel()){aviso("Selecione algo primeiro.");return}
-  var n=nsel();snap();ED.add=ED.add.filter(function(_,i){return !selE[i]});selE={};saveED();toast(n+(n>1?" itens apagados":" item apagado"),"Desfazer",desfazer)}
+  var n=nsel(),rf=!!selR;snap();if(selR)(ED.ops=ED.ops||[]).push({r:selR,x:1});
+  ED.add=ED.add.filter(function(_,i){return !selE[i]});limpaSel();if(rf)refazBase();saveED();toast(n+(n>1?" itens apagados":" item apagado"),"Desfazer",desfazer)}
 function fechaLinha(){if(cur.length>=4){snap();ED.add.push({c:"#000000",k:"p",p:cur});saveED()}cur=[]}
 function setTool(t){if(tool==="lin")fechaLinha();tool=t;mp=[];box=null;mv=null;off=null;shp=null;hw=null;sn=null;aviso(dicas[t]);ui();draw()}
 async function medida(){
@@ -531,9 +546,9 @@ function fimLin(o){
     w=s2w(o.x,o.y);
     if(vd){var d0=vd;vd=null;sn=null;if(d0.n)saveED()}
     else if(box&&o.mv){var b=box;box=null;caixa([Math.min(b[0],b[2]),Math.min(b[1],b[3]),Math.max(b[0],b[2]),Math.max(b[1],b[3])])}
-    else{box=null;selE={};var i=pega(w);if(i>=0){selE[i]=true;aviso("Selecionada · comprimento "+fmtD(lenIt(ED.add[i]))+". Use Mover ou Apagar.")}}}
+    else{box=null;limpaSel();var i=pega(w);if(i>=0){selE[i]=true;aviso("Selecionada · comprimento "+fmtD(lenIt(ED.add[i]))+". Use Mover ou Apagar.")}}}
   else if(tool==="mov"){
-    if(mv&&off&&o.mv){snap();ED.add.forEach(function(it,i){if(selE[i]){for(var k=0;k<it.p.length;k+=2){it.p[k]=r2(it.p[k]+off[0]);it.p[k+1]=r2(it.p[k+1]+off[1])}delete it.P}});saveED()}
+    if(mv&&off&&o.mv){snap();var rf=!!selR;if(selR)(ED.ops=ED.ops||[]).push({r:selR,dx:r2(off[0]),dy:r2(off[1])});ED.add.forEach(function(it,i){if(selE[i]){for(var k=0;k<it.p.length;k+=2){it.p[k]=r2(it.p[k]+off[0]);it.p[k+1]=r2(it.p[k+1]+off[1])}delete it.P}});selR=null;selP=null;selN=0;if(rf)refazBase();saveED()}
     mv=null;off=null}
   else if(tool==="ret"||tool==="cir"){
     if(shp&&o.mv){var e=alvo(o.x,o.y,null);shp[2]=e[0];shp[3]=e[1];var q=formaPts(tool,shp);if(q){snap();ED.add.push({c:"#000000",k:"p",p:q});saveED()}}
@@ -569,7 +584,7 @@ function ui(){
   $("tIma").classList.toggle("on",ima);$("tOrt").classList.toggle("on",ort);
   $("tUnd").disabled=!pilha.length;$("tRef").disabled=!pilhaR.length;
   var dk=!$("dock").hidden;if(dk!==dockOn){dockOn=dk;setTimeout(function(){size();if(D){base=null;renderBase()}else draw()},0)}
-  $("bSend").hidden=!(FIREBASE&&canEdit&&tdo);$("bHist").hidden=!(FIREBASE&&canEdit);$("bAdd").classList.toggle("on",addMode);
+  $("bSend").hidden=!(FIREBASE&&canEdit&&tdo);$("bHist").hidden=!(FIREBASE&&canEdit);$("bDxf").hidden=$("bFull").hidden=$("bJson").hidden=!podeBaixar;$("bAdd").classList.toggle("on",addMode);
   $("sel").hidden=!sel;
   if(sel){$("nome").value=sel.nome;$("nome").readOnly=!editando();$("tipoSel").value=sel.t||"maq";$("tipoSel").disabled=!editando();$("bDel").hidden=!editando();$("acoes").hidden=!editando();detalhes()}
 }
@@ -728,10 +743,26 @@ document.querySelectorAll("#acoes .nb").forEach(function(b){b.onclick=function()
 $("nome").oninput=function(){if(sel&&editando()){snapC("nome:"+sel.id);sel.nome=this.value;save();draw()}};
 $("nome").onchange=lista;
 $("bOpen").onclick=function(){$("fil").click()};
-function baixar(nome,txt,tipo){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:tipo}));a.download=nome;a.click()}
-$("bJson").onclick=function(){baixar("maquinas.json",JSON.stringify(VM(),null,1),"application/json")};
+function baixar(nome,txt,tipo){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob(Array.isArray(txt)?txt:[txt],{type:tipo}));a.download=nome;a.click()}
+function logBaixou(a){if(DB)DB.setDoc(DB.doc(DB.col(DB.fs,"historico")),{pt:"",nome:"",acao:a,antes:"",depois:"",por:eu,em:Date.now()}).catch(function(){})}
+$("bFull").onclick=function(){
+  if(!D){aviso("Abra ou carregue a planta primeiro.");return}
+  aviso("Gerando o DXF… pode levar alguns segundos.");
+  setTimeout(function(){
+    if(!D.buf)D.buf=toBIN(D);
+    var parts=["0\nSECTION\n2\nENTITIES\n"],bf=[],n=0,f=function(v){return Math.round(v*100)/100};
+    eachSeg(D.buf,opsAll(),function(c,a,b,x,y){
+      bf.push("0\nLINE\n8\nLINHA_"+c.slice(1)+"\n420\n"+parseInt(c.slice(1),16)+"\n10\n"+f(a)+"\n20\n"+f(b)+"\n30\n0\n11\n"+f(x)+"\n21\n"+f(y)+"\n31\n0\n");
+      if(++n%2000===0){parts.push(bf.join(""));bf=[]}});
+    parts.push(bf.join(""));
+    D.texts.forEach(function(t){parts.push("0\nTEXT\n8\nTEXTO\n10\n"+t[0]+"\n20\n"+t[1]+"\n30\n0\n40\n"+t[2]+"\n1\n"+String(t[4]).replace(/[\r\n]/g," ")+"\n50\n"+t[3]+"\n")});
+    ED.add.forEach(function(it){var p=it.p,st=it.k==="s"?4:2,k;for(k=0;k+3<p.length;k+=st)parts.push("0\nLINE\n8\nEDICAO\n10\n"+p[k]+"\n20\n"+p[k+1]+"\n30\n0\n11\n"+p[k+2]+"\n21\n"+p[k+3]+"\n31\n0\n")});
+    VM().forEach(function(m){var ly=tipoDe(m).y;parts.push("0\nCIRCLE\n8\n"+ly+"\n10\n"+m.x+"\n20\n"+m.y+"\n30\n0\n40\n2\n0\nTEXT\n8\n"+ly+"\n10\n"+(m.x+3)+"\n20\n"+m.y+"\n30\n0\n40\n2\n1\n"+String(m.nome).replace(/[\r\n]/g," ")+"\n")});
+    parts.push("0\nENDSEC\n0\nEOF\n");
+    baixar("planta-editada.dxf",parts,"application/dxf");logBaixou("baixou a planta completa em DXF");aviso("")},30)};
+$("bJson").onclick=function(){logBaixou("baixou o backup JSON");baixar("maquinas.json",JSON.stringify(VM(),null,1),"application/json")};
 $("bDxf").onclick=function(){
-  var s="0\nSECTION\n2\nENTITIES\n";
+  logBaixou("baixou os pontos em DXF");var s="0\nSECTION\n2\nENTITIES\n";
   VM().forEach(function(m){var ly=tipoDe(m).y;s+="0\nCIRCLE\n8\n"+ly+"\n10\n"+m.x+"\n20\n"+m.y+"\n30\n0\n40\n2\n0\nTEXT\n8\n"+ly+"\n10\n"+(m.x+3)+"\n20\n"+m.y+"\n30\n0\n40\n2\n1\n"+m.nome+"\n"});
   ED.add.forEach(function(it){var p=it.p,st=it.k==="s"?4:2,k;for(k=0;k+3<p.length;k+=st)s+="0\nLINE\n8\nEDICAO\n10\n"+p[k]+"\n20\n"+p[k+1]+"\n30\n0\n11\n"+p[k+2]+"\n21\n"+p[k+3]+"\n31\n0\n"});
   baixar("maquinas.dxf",s+"0\nENDSEC\n0\nEOF\n","application/dxf")};
@@ -758,7 +789,9 @@ async function enviar(){
     var u=new Uint8Array(D.buf||toBIN(D)),C=700000,n=Math.ceil(u.length/C),i;
     for(i=0;i<n;i++){aviso("Enviando a planta… parte "+(i+1)+" de "+n);await DB.setDoc(DB.doc(DB.fs,"planta","desenho_"+i),{b:DB.Bytes.fromUint8Array(u.slice(i*C,(i+1)*C))})}
     await DB.setDoc(DB.doc(DB.fs,"planta","desenho"),{n:n,em:Date.now()});
-    aviso("Planta guardada no servidor ("+n+" partes). Pode sair e entrar para conferir.")
+    aviso("Planta guardada no servidor ("+n+" partes). Pode sair e entrar para conferir.");
+    if(ED.del.length||(ED.ops||[]).length||ED.add.length){
+      if(await dialogo("Zerar as edições de linhas?","Se esta planta já tem as mudanças (por exemplo, veio do LibreCAD ou da exportação completa), zere as linhas movidas, apagadas e desenhadas para não aplicar duas vezes.",null,null,"Zerar")){snap();ED={del:[],add:[],esc:ED.esc,ops:[]};saveED();refazBase()}}
   }catch(e){aviso("Não consegui enviar ("+(e.code||e.message)+"). Confira se o seu e-mail está em editores.")}
 }
 $("bSend").onclick=enviar;
@@ -783,7 +816,7 @@ async function iniciaFirebase(){
     try{var r=await F.getDocs(F.query(F.collection(fs,"historico"),F.orderBy("em","desc"),F.limit(60))),ul=$("dHl");ul.innerHTML="";
       if(r.empty){ul.innerHTML="<li>Nenhuma alteração registrada ainda.</li>"}
       r.forEach(function(d){var h=d.data(),li=document.createElement("li"),a=document.createElement("b"),sm=document.createElement("small");
-        a.textContent=h.nome+" · "+h.acao;sm.textContent=new Date(h.em).toLocaleString("pt-BR")+" · "+h.por;
+        a.textContent=(h.nome?h.nome+" · ":"")+h.acao;sm.textContent=new Date(h.em).toLocaleString("pt-BR")+" · "+h.por;
         li.appendChild(a);li.appendChild(document.createElement("br"));li.appendChild(sm);ul.appendChild(li)});
       $("dH").showModal()}catch(e){aviso("Sem permissão para ver o histórico.")}};
   $("dHx").onclick=function(){$("dH").close()};
@@ -798,14 +831,14 @@ async function iniciaFirebase(){
     else Au.signInWithPopup(auth,new Au.GoogleAuthProvider()).catch(function(e){aviso("Não foi possível entrar ("+(e.code||e.message)+").")})};
   Au.onAuthStateChanged(auth,async function(u){
     if(unsub){unsub();unsub=null}
-    M=[];Mb={};canEdit=false;mode="ver";sel=null;D=null;base=null;ED={del:[],add:[],esc:0};selE={};lin=false;mede=false;addMode=false;cur=[];mp=[];perfil="todos";filtro="todos";soVenc=false;mostraAlc=false;$("ver").value="todos";montaTipos();lista();ui();draw();
+    M=[];Mb={};canEdit=false;podeBaixar=false;mode="ver";sel=null;D=null;base=null;ED={del:[],add:[],esc:0};limpaSel();lin=false;mede=false;addMode=false;cur=[];mp=[];perfil="todos";filtro="todos";soVenc=false;mostraAlc=false;$("ver").value="todos";montaTipos();lista();ui();draw();
     logado=!!u;$("bLogin").textContent=u?"Sair":"Entrar com Google";
     if(!u){aviso("Entre com o Google para ver as máquinas.");return}
     var mail=(u.email||"").toLowerCase();eu=mail;
     try{var a=await F.getDoc(F.doc(fs,"config","acesso")),d0=a.data(),
         lc=function(l){return (l||[]).map(function(x){return String(x).toLowerCase()})},
         sS=lc(d0.sesmt).indexOf(mail)>-1,sM=lc(d0.manutencao).indexOf(mail)>-1;
-      canEdit=lc(d0.editores).indexOf(mail)>-1;
+      canEdit=lc(d0.editores).indexOf(mail)>-1;podeBaixar=canEdit||lc(d0.exportadores).indexOf(mail)>-1;
       perfil=sS&&!sM?"sesmt":sM&&!sS?"manut":"todos";montaTipos();lista()}
     catch(e){aviso("Sem acesso. Peça ao dono para liberar o e-mail "+mail+".");return}
     aviso("");
